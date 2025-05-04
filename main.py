@@ -42,9 +42,9 @@ def handle_dolar(message):
 
 		response = (
 			"🔥 *Current Dollar Prices*\n\n"
-			f"🏦 *Cen:* *{result['dolar-bcv']}* Bs\\.\n"
-			f"📈 *Par:* *{result['dolar-par']}* Bs\\.\n"
-			f"📊 *Avg:* *{result['dolar-pro']}* Bs\\.\n"
+			f"🏦 *Cen:* *{result['dolar-bcv']}* Bs\n"
+			f"📈 *Par:* *{result['dolar-par']}* Bs\n"
+			f"📊 *Avg:* *{result['dolar-pro']}* Bs\n"
 		)
 
 		bot.reply_to(message, response, parse_mode="MarkdownV2")
