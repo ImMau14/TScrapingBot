@@ -42,15 +42,15 @@ def handle_dolar(message):
 
 		response = (
 			"🔥 *Current Dollar Prices*\n\n"
-			f"🏦 *Cen:* *{result['dolar-bcv']}* Bs\n"
-			f"📈 *Par:* *{result['dolar-par']}* Bs\n"
-			f"📊 *Avg:* *{result['dolar-pro']}* Bs\n"
+			f"🏦 *Cen:* *{str(result['dolar-bcv']).replace('.', ',')}* Bs\\.\n"
+			f"📈 *Par:* *{str(result['dolar-par']).replace('.', ',')}* Bs\\.\n"
+			f"📊 *Avg:* *{str(result['dolar-pro']).replace('.', ',')}* Bs\\.\n"
 		)
 
 		bot.reply_to(message, response, parse_mode="MarkdownV2")
 
 	except Exception as e:
-		bot.reply_to(message, f"*Exception:* `{str(e)}`", parse_mode="MarkdownV2")
+		bot.reply_to(message, f"*Critical Error:* `{str(e)}`", parse_mode="MarkdownV2")
 
 # ========== Rutas Flask ==========
 @app.route('/')
