@@ -2,21 +2,24 @@ import os
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 import telebot
-from scraper.dolar_scraper import getDolarValues
+from modules.dolar_scraper import getDolarValues
+from modules.gemini import Gemini
 
 # ========== Configuración inicial ===========
 load_dotenv()
 app = Flask(__name__)
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+GEMINI_TOKEN = os.getenv('GEMINI_TOKEN')
 BOT_NAME = os.getenv('BOT_NAME')
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 COMMAND_LIST = """Commands
 
-/ping - Ping command.
-/help - Show all commands.
-/dolar - Show the dolar prices in Bs.
+/ping - Ping command
+/help - Show the command list
+/dolar - Show the current dollar prices in Bs
+/ask - Ask to Gemini 2.0
 """
 
 # ========== Handlers ==========
@@ -29,7 +32,7 @@ def help(message):
 	bot.reply_to(message, COMMAND_LIST)
 
 @bot.message_handler(commands=['dolar', f'dolar@{BOT_NAME}'])
-def handle_dolar(message):
+def dolar(message):
 	try:
 		result = getDolarValues()
 		if 'error' in result:
@@ -51,6 +54,23 @@ def handle_dolar(message):
 
 	except Exception as e:
 		bot.reply_to(message, f"*Critical Error:* `{str(e)}`", parse_mode="MarkdownV2")
+
+@bot.message_handler(commands=['ask', f'ask@{BOT_NAME}'])
+def ask(message):
+	try:
+		user_query = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 else None
+
+		if not user_query:
+			return bot.reply_to(message, "Debes escribir una pregunta después de /ask")
+
+		g = Gemini(GEMINI_TOKEN)
+		r = g.ask(user_query)
+
+		bot.reply_to(message, r, parse_mode="Markdown")
+
+	except Exception as e:
+		error_msg = str(e).replace('_', '\\_').replace('*', '\\*')  # Escapar Markdown
+		bot.reply_to(message, f"*Error*: `{error_msg}`", parse_mode="MarkdownV2")
 
 # ========== Rutas Flask ==========
 @app.route('/')
