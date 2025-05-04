@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import telebot
 from modules.dolar_scraper import getDolarValues
 from modules.gemini import Gemini
+import re
 
 # ========== Configuración inicial ===========
 load_dotenv()
@@ -21,6 +22,10 @@ COMMAND_LIST = """Commands
 /dolar - Show the current dollar prices in Bs
 /ask - Ask to Gemini 2.0
 """
+
+def escape_markdown_v2(text):
+    special_chars = r"_*[]()~`>#+-=|{}.!"
+    return re.sub(f"([{re.escape(special_chars)}])", r"\\\1", text)
 
 # ========== Handlers ==========
 @bot.message_handler(commands=['ping', f'start@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
@@ -66,7 +71,7 @@ def ask(message):
 		g = Gemini(GEMINI_TOKEN)
 		r = g.ask(user_query)
 
-		bot.reply_to(message, r, parse_mode="Markdown")
+		bot.reply_to(message, escape_markdown_v2(r), parse_mode="Markdown")
 
 	except Exception as e:
 		error_msg = str(e).replace('_', '\\_').replace('*', '\\*')  # Escapar Markdown
