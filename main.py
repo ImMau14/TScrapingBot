@@ -24,8 +24,8 @@ COMMAND_LIST = """Commands
 """
 
 def escape_markdown_v2(text):
-    special_chars = r"_*[]()~`>#+-=|{}.!"
-    return re.sub(f"([{re.escape(special_chars)}])", r"\\\1", text)
+	special_chars = r"_*[]()~`>#+-=|{}.!"
+	return re.sub(f"([{re.escape(special_chars)}])", r"\\\1", text)
 
 # ========== Handlers ==========
 @bot.message_handler(commands=['ping', f'start@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
