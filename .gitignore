@@ -1,3 +1,4 @@
 .env
 venv/
-scraper/__pycache__
+env/
+modules/__pycache__
