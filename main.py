@@ -4,22 +4,25 @@ from dotenv import load_dotenv
 import telebot
 from modules.dolar_scraper import getDolarValues
 from modules.gemini import Gemini
+from modules.page_scraper import obtainPageText
 import re
 
 load_dotenv()
 app = Flask(__name__)
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 GEMINI_TOKEN = os.getenv('GEMINI_TOKEN')
+SCRAPEDO_TOKEN = os.getenv('SCRAPEDO_TOKEN')
 BOT_NAME = os.getenv('BOT_NAME')
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
-COMMAND_LIST = """Commands
+COMMAND_LIST = """*Commands*
 
 /ping - Ping command
-/help - Show the command list
+/help - Show this command list
 /dolar - Show the current dollar prices in Bs
-/ask - Ask to Gemini 2.0
+/ask <query> - Ask to Gemini 2.0
+/search <url> <query> - Search in the URL
 """
 
 def sanitize_markdown_v1(text: str) -> str:
@@ -56,12 +59,12 @@ def sanitize_markdown_v1(text: str) -> str:
 @bot.message_handler(commands=['ping', f'ping@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def ping(message):
 	if message.text.startswith('/ping@' + BOT_NAME) or message.chat.type == 'private':
-		bot.reply_to(message, "I'm here!")
+		bot.reply_to(message, "I'm here! TScrapingBot v1.1 online!")
 
 @bot.message_handler(commands=['help', f'help@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def help(message):
 	if message.text.startswith('/help@' + BOT_NAME) or message.chat.type == 'private':
-		bot.reply_to(message, COMMAND_LIST)
+		bot.reply_to(message, COMMAND_LIST, parse_mode="Markdown")
 
 @bot.message_handler(commands=['dolar', f'dolar@{BOT_NAME}'])
 def dolar(message):
@@ -100,6 +103,47 @@ def ask(message):
 
 			g = Gemini(GEMINI_TOKEN, 'chat')
 			r = g.ask(user_query)
+			r = sanitize_markdown_v1(r)
+
+			# Función para dividir el texto
+			def split_text(text, max_length=4096):
+				chunks = []
+				while len(text) > max_length:
+					split_index = text.rfind('\n', 0, max_length)  # Busca último salto de línea
+					if split_index == -1:
+						split_index = max_length  # Si no hay salto, corta al límite
+					chunks.append(text[:split_index])
+					text = text[split_index:]
+				chunks.append(text)
+				return chunks
+
+			# Dividir y enviar
+			chunks = split_text(r)
+			for i, chunk in enumerate(chunks):
+				if i == 0:
+					bot.reply_to(message, chunk, parse_mode="Markdown")
+				else:
+					bot.send_message(chat_id, chunk, parse_mode="Markdown")
+
+		except Exception as e:
+			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
+
+@bot.message_handler(commands=['search', f'search@{BOT_NAME}'])
+def search(message):
+	if message.text.startswith('/search@' + BOT_NAME) or message.chat.type == 'private':
+		chat_id = message.chat.id
+		try:
+			msg = message.text.split(' ', 2)
+			userURL = message.text.split(' ', 2)[1] if len(message.text.split()) > 1 else None
+			user_query = message.text.split(' ', 2)[2] if len(message.text.split()) > 1 else None
+
+			url = f"http://api.scrape.do?token={SCRAPEDO_TOKEN}&url={userURL}"
+
+			if not user_query:
+				return bot.reply_to(message)
+
+			g = Gemini(GEMINI_TOKEN, 'chat')
+			r = g.ask(f"{user_query} \n\n{obtainPageText(url)} \n\nPage URL: {userURL}")
 			r = sanitize_markdown_v1(r)
 
 			# Función para dividir el texto

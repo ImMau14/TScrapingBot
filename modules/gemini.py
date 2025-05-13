@@ -35,6 +35,7 @@ Siempre omito los espacios de identacion de empezar cada texto, excepto cuando e
 
 🌍 _Multilingüismo_
 Mantener esta estructura para cualquier idioma:
+
 ```
 📌 *Lista de Ejemplo (ES):*
 ▸ Pan *integral*
