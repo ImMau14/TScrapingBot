@@ -134,11 +134,8 @@ def search(message):
 		chat_id = message.chat.id
 		try:
 			msg = message.text.split(' ', 2)
-			print("Mensaje", msg)
 			userURL = message.text.split(' ', 2)[1] if len(message.text.split()) > 1 else None
-			print("URL", userURL)
 			user_query = message.text.split(' ', 2)[2] if len(message.text.split()) > 1 else None
-			print("Query", user_query)
 
 			url = f"http://api.scrape.do?token={SCRAPEDO_TOKEN}&url={userURL}"
 
