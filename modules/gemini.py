@@ -68,7 +68,7 @@ class Gemini:
 		else:
 			self.mode = "Eres un asistente que responde sin estilos markdown, ya que solo respondes mediante CLI. Puedes usar colores para darle estilos a tus mensajes."
 
-		self.model = genai.GenerativeModel(
+		self.modelo = genai.GenerativeModel(
 			'gemini-2.0-flash',
 			system_instruction=self.mode,
 			generation_config=genai.GenerationConfig(
@@ -78,20 +78,9 @@ class Gemini:
 			)
 		)
 
-	def ask(self, prompt, image_bytes: bytes = None):
-		"""
-		Si image_bytes viene None, hace solo texto.
-		Si trae bytes, sube la imagen y la incluye como primer input.
-		"""
-		inputs = []
-		if image_bytes:
-			# sube la imagen para reuse (recomendado si >20MB)
-			img_file = self.model.client.files.upload(file=image_bytes)
-			inputs.append(img_file)
-		inputs.append(prompt)
-
+	def ask(self, prompt):
 		try:
-			resp = self.model.generate_content(contents=inputs)
-			return resp.text
+			respuesta = self.modelo.generate_content(prompt)
+			return respuesta.text
 		except Exception as e:
-			return f"Error: {e}"
+			return f"Error: {str(e)}"

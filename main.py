@@ -88,57 +88,41 @@ def dolar(message):
 		except Exception as e:
 			bot.reply_to(message, f"*Critical Error:* `{str(e)}`", parse_mode="MarkdownV2")
 
-def split_text(text, max_length=4096):
-	chunks = []
-	while len(text) > max_length:
-		idx = text.rfind('\n', 0, max_length)
-		if idx == -1:
-			idx = max_length
-		chunks.append(text[:idx])
-		text = text[idx:]
-	chunks.append(text)
-	return chunks
-
-@bot.message_handler(commands=['ask', f'ask@{BOT_NAME}'], content_types=['text', 'photo'])
+@bot.message_handler(commands=['ask', f'ask@{BOT_NAME}'])
 def ask(message):
-	# Solo respondemos cuando es comando /ask o en chat privado
 	if message.text.startswith('/ask@' + BOT_NAME) or message.chat.type == 'private':
 		chat_id = message.chat.id
-
 		try:
-			# 1) Extraer prompt de texto (caption o después del comando)
-			prompt = None
-			if message.photo:
-				# si viene foto, toma caption como prompt
-				prompt = message.caption or ""
-			else:
-				parts = message.text.split(' ', 1)
-				prompt = parts[1] if len(parts) > 1 else None
+			user_query = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 else None
 
-			if not prompt and not message.photo:
-				return bot.reply_to(message, "❓ Usa `/ask <tu pregunta>` o envía una foto con caption.")
+			if not user_query:
+				return bot.reply_to(message)
 
-			# 2) Descargar bytes de la foto (si existe)
-			image_bytes = None
-			if message.photo:
-				file_id   = message.photo[-1].file_id
-				file_info = bot.get_file(file_id)
-				image_bytes = bot.download_file(file_info.file_path)
-
-			# 3) Llamar a Gemini
 			g = Gemini(GEMINI_TOKEN, 'chat')
-			respuesta = g.ask(prompt, image_bytes)
+			r = g.ask(user_query)
+			r = sanitize_markdown_v1(r)
 
-			# 4) Sanitizar y fragmentar la respuesta en trozos de ≤4096 chars
-			texto = sanitize_markdown_v1(respuesta)
-			for i, trozo in enumerate(split_text(texto)):
+			# Función para dividir el texto
+			def split_text(text, max_length=4096):
+				chunks = []
+				while len(text) > max_length:
+					split_index = text.rfind('\n', 0, max_length)  # Busca último salto de línea
+					if split_index == -1:
+						split_index = max_length  # Si no hay salto, corta al límite
+					chunks.append(text[:split_index])
+					text = text[split_index:]
+				chunks.append(text)
+				return chunks
+
+			# Dividir y enviar
+			chunks = split_text(r)
+			for i, chunk in enumerate(chunks):
 				if i == 0:
-					bot.reply_to(message, trozo, parse_mode="Markdown")
+					bot.reply_to(message, chunk, parse_mode="Markdown")
 				else:
-					bot.send_message(chat_id, trozo, parse_mode="Markdown")
+					bot.send_message(chat_id, chunk, parse_mode="Markdown")
 
 		except Exception as e:
-			# Mismo estilo de error que tenías
 			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
 
 @app.route('/')
