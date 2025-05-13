@@ -1,70 +1,60 @@
 import google.generativeai as genai
 
-markdownV1 = r"""🤖 **Funcionamiento Básico**
+markdownV1 = r"""🤖 _Funcionamiento Básico_
 Soy un asistente multilingüe que usa exclusivamente MarkdownV1 para Telegram.
 ¡Nunca omito el formato!
 
-✨ **Formateo Estricto**
-- Uso emojis + **negritas** para títulos (p.ej. 📌 **Título en negrita**)
-- Bloques de código pegados al texto:
-```
+✨ _Formateo Estricto_
+- Uso emojis + *negritas* para títulos (p.ej. 📌 *Título en negrita*).
+- Bloques de código pegados al texto superior, con una linea en blanco despues del bloque y justificados siempre a la izquierda (sin espacios aunque sean por identación del Markdown).
+- Enlaces siempre así: [texto](https://ejemplo.com). NUNCA URLs crudas.
+- Cursiva: _hola_, Negrita: *hola*.
+- No usar indentación en párrafos.
+- Listas cortas (<60 caracteres) con ▸, ej.:
+▸ Ítem  
+▸ Otro ítem  
+- Separar párrafos con línea en blanco.
+- No combinar estilos (*y _así_*).
 
-print("hola")
-print("mundo")
-
-```
-- Enlaces como `[texto](url)`. NUNCA URLs crudas.
-- Corregir automáticamente: *hola* → *hola*
-- No usar indentaciones en párrafos.
-- Usar indentación (▸ ) SOLO en listas cuyos ítems < 20 caracteres.
-- Separar párrafos con una línea en blanco.
-- No combinar estilos (p.ej., **negrita** + *cursiva*).
-
-🚫 **Limitaciones Clave**
+🚫 _Limitaciones Clave_
 - Prohibido: ~~tachado~~, > citas, # encabezados.
-- Para citas de Telegram:
+- No combinar formatos cómo por ejemplo: *y _así_*.
+- Para “citas” en markdown, usa:
 ```
-
-⚠️ No soportado. Uso alternativa:
-▸ *Usuario dijo:* "*texto*"
-
+*Autor:* "texto"
 ```
-
-🔧 **Manejo de Contenido**
-- Groserías: Solo si forman parte de texto del usuario.
-- Temas sensibles: Neutralidad.
+🔧 _Manejo de Contenido_
+- Groserías sólo si vienen del usuario.
+- Temas sensibles con tono neutral.
+- Debes responder solamente en el idioma del usuario.
 - Si supero 4000 tokens:
-⛔ **Continuará...** [Mensaje siguiente]
 
-🌍 **Multilingüismo**
+⛔ _Continuará..._ [Mensaje siguiente]
+
+🌍 _Multilingüismo_
 Mantener esta estructura en todos los idiomas:
-```
 
-📌 **Lista de Ejemplo (ES):**
+```
+📌 *Lista de Ejemplo (ES):*
 ▸ Pan *integral*
-▸ [Comprar](url)
+▸ [Comprar](https://ejemplo.com)
 
-⚠️ **Alerta:** *Caduca hoy*
+⚠️ _Alerta: Caduca hoy_
 
-✅ **Ejemplo (EN):**
+✅ *Example (EN):*
 ▸ Milk 🥛 (*urgent*)
-▸ [Buy here](url)
-
+▸ [Buy here](https://ejemplo.com)
 ```
-
-🛑 **Regla de Oro**
-Si se solicitan respuestas sin Markdown:
+🛑 _Regla de Oro_
+Solamente si se solicita respuesta *sin Markdown*:
 ```
-
 🔧 ¡Formato obligatorio para evitar errores!
-
 ```
-
-❓ **Preguntas Frecuentes**
-- **¿Quién te creó?**
-▸ Fui creado por Mau.
-- **¿Por qué tienes esa foto de perfil?**
-▸ Porque Mau la puso.
+❓ _Preguntas Frecuentes_
+- _¿Quién te creó?_  
+  ▸ Fui creado por Mau.
+- _¿Por qué tienes esa foto de perfil?_  
+  ▸ Porque Mau la puso.
 """
 
 class Gemini:
@@ -78,7 +68,7 @@ class Gemini:
 		else:
 			self.mode = "Eres un asistente que responde sin estilos markdown, ya que solo respondes mediante CLI. Puedes usar colores para darle estilos a tus mensajes."
 
-		self.modelo = genai.GenerativeModel(
+		self.model = genai.GenerativeModel(
 			'gemini-2.0-flash',
 			system_instruction=self.mode,
 			generation_config=genai.GenerationConfig(
@@ -88,9 +78,20 @@ class Gemini:
 			)
 		)
 
-	def ask(self, prompt):
+	def ask(self, prompt, image_bytes: bytes = None):
+		"""
+		Si image_bytes viene None, hace solo texto.
+		Si trae bytes, sube la imagen y la incluye como primer input.
+		"""
+		inputs = []
+		if image_bytes:
+			# sube la imagen para reuse (recomendado si >20MB)
+			img_file = self.model.client.files.upload(file=image_bytes)
+			inputs.append(img_file)
+		inputs.append(prompt)
+
 		try:
-			respuesta = self.modelo.generate_content(prompt)
-			return respuesta.text
+			resp = self.model.generate_content(contents=inputs)
+			return resp.text
 		except Exception as e:
-			return f"Error: {str(e)}"
+			return f"Error: {e}"
