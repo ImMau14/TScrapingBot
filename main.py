@@ -123,7 +123,7 @@ def ask(message):
 				if i == 0:
 					bot.reply_to(message, chunk, parse_mode="Markdown")
 				else:
-					bot.send_message(chat_id, chunk, parse_mode="Markdown")
+					bot.reply_to(message, chunk, parse_mode="Markdown")
 
 		except Exception as e:
 			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
@@ -164,7 +164,7 @@ def search(message):
 				if i == 0:
 					bot.reply_to(message, chunk, parse_mode="Markdown")
 				else:
-					bot.send_message(chat_id, chunk, parse_mode="Markdown")
+					bot.reply_to(message, chunk, parse_mode="Markdown")
 
 		except Exception as e:
 			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
