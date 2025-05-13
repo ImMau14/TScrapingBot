@@ -1,4 +1,5 @@
 annotated-types==0.7.0
+beautifulsoup4==4.13.4
 blinker==1.9.0
 cachetools==5.5.2
 certifi==2025.4.26
@@ -31,6 +32,7 @@ pyTelegramBotAPI==4.26.0
 python-dotenv==1.1.0
 requests==2.32.3
 rsa==4.9.1
+soupsieve==2.7
 tqdm==4.67.1
 typing-inspection==0.4.0
 typing_extensions==4.13.2
