@@ -2,6 +2,8 @@
 <h1>TScrapingBot</h1>
 
 Un bot de Telegram enfocado en el web scraping aplicado con la inteligencia artificial. El bot está potenciado por Gemini 2.0.
+
+Clic aquí para usarlo en Telegram: [TScrapingBot](https://t.me/TScrapingBot)
 </div>
 
 ## Funcionalidades
