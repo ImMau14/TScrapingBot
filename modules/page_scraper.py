@@ -8,7 +8,7 @@ def mask_token(text, TOKEN=None):
 	# Enmascara cualquier aparición de token=XYZ
 	return re.sub(r'token=[^&\s]+', MASKED, text)
 
-def obtain_page_text(_url, TOKEN=None):
+def obtainPageText(_url, TOKEN=None):
 	if not TOKEN:
 		url = _url
 	else:
@@ -40,5 +40,5 @@ def obtain_page_text(_url, TOKEN=None):
 		return f"Error interno."
 
 if __name__ == "__main__":
-	texto = obtain_page_text("https://www.google.com")
+	texto = obtainPageText("https://www.google.com")
 	print(texto)
