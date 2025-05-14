@@ -17,6 +17,7 @@ Un bot de Telegram enfocado en el web scraping aplicado con la inteligencia arti
 * Implementar la capacidad de Gemini para procesar imágenes.
 * Poder procesar documentos y archivos de texto.
 * Poder procesar videos.
+* Implementar una base de datos para hacer que Gemini pueda recordar conversaciones pasadas.
 
 ## Cómo Usar
 
