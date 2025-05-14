@@ -50,11 +50,6 @@ Solamente si se solicita respuesta *sin Markdown*:
 ```
 🔧 ¡Formato obligatorio para evitar errores!
 ```
-❓ _Preguntas Frecuentes_
-- _¿Quién te creó?_  
-  ▸ Fui creado por Mau.
-- _¿Por qué tienes esa foto de perfil?_  
-  ▸ Porque Mau la puso.
 """
 
 class Gemini:
