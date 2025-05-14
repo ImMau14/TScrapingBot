@@ -1,19 +1,44 @@
+import re
 import requests
 from bs4 import BeautifulSoup
 
-def obtainPageText(url):
+MASKED = "token=****"
+
+def mask_token(text, TOKEN=None):
+	# Enmascara cualquier aparición de token=XYZ
+	return re.sub(r'token=[^&\s]+', MASKED, text)
+
+def obtain_page_text(_url, TOKEN=None):
+	if not TOKEN:
+		url = _url
+	else:
+		url = f"http://api.scrape.do/?token={TOKEN}&url={_url}"
+
 	try:
-		response = requests.get(url)
-		response.raise_for_status()
-		soup = BeautifulSoup(response.text, 'html.parser')
-		texto = soup.get_text(separator='\n', strip=True)
-		return texto
+		resp = requests.get(url, timeout=10)
+		resp.raise_for_status()
+		soup = BeautifulSoup(resp.text, 'html.parser')
+		return soup.get_text(separator='\n', strip=True)
+
+	except requests.exceptions.HTTPError as e:
+		# Extrae el código y el mensaje original
+		code = e.response.status_code
+		reason = e.response.reason
+		err_url = mask_token(e.request.url)
+		if code == 400:
+			return "Error 400: solicitud malformada."
+		return f"HTTP {code} {reason} al acceder a {err_url}"
+
 	except requests.exceptions.RequestException as e:
-		return f"Network error: {e}"
+		# Captura timeouts, rechazos, DNS, etc.
+		err = mask_token(str(e))
+		return f"Error de red: {err}"
+
 	except Exception as e:
-		return f"Error: {e}"
+		# Cualquier otro fallo
+		err = mask_token(str(e))
+		return f"Error interno: {err}"
 
 if __name__ == "__main__":
-	url = "https://www.google.com"
-	texto_visible = obtainPageText(url)
-	print(texto_visible)
+	texto = obtain_page_text("https://www.google.com")
+	print(texto)

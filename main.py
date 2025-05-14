@@ -59,16 +59,19 @@ def sanitize_markdown_v1(text: str) -> str:
 @bot.message_handler(commands=['start', f'start@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def start(message):
 	if message.text.startswith('/start@' + BOT_NAME) or message.chat.type == 'private':
+		bot.send_chat_action(message.chat.id, 'typing')
 		bot.reply_to(message, "Hello! 👋 I'm TScrapingBot, your Telegram assistant for web scraping and artificial intelligence.")
 
 @bot.message_handler(commands=['ping', f'ping@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def ping(message):
 	if message.text.startswith('/ping@' + BOT_NAME) or message.chat.type == 'private':
+		bot.send_chat_action(message.chat.id, 'typing')
 		bot.reply_to(message, "I'm here! TScrapingBot online!")
 
 @bot.message_handler(commands=['help', f'help@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def help(message):
 	if message.text.startswith('/help@' + BOT_NAME) or message.chat.type == 'private':
+		bot.send_chat_action(message.chat.id, 'typing')
 		bot.reply_to(message, COMMAND_LIST, parse_mode="Markdown")
 
 @bot.message_handler(commands=['dolar', f'dolar@{BOT_NAME}'])
@@ -145,13 +148,13 @@ def search(message):
 
 			userURL = userURL.replace('&', '%26')
 
-			url = f"http://api.scrape.do?token={SCRAPEDO_TOKEN}&url={userURL}"
+			# url = f"http://api.scrape.do?token={SCRAPEDO_TOKEN}&url={userURL}"
 
 			if not user_query:
 				return bot.reply_to(message)
 
 			g = Gemini(GEMINI_TOKEN, 'chat')
-			r = g.ask(f"{user_query} \n\n{obtainPageText(url)} \n\nPage URL: {userURL}")
+			r = g.ask(f"{user_query} \n\n{obtainPageText(userURL, SCRAPEDO_TOKEN)} \n\nPage URL: {userURL}")
 			r = sanitize_markdown_v1(r)
 
 			# Función para dividir el texto
