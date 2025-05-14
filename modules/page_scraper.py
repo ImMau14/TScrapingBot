@@ -11,7 +11,7 @@ def obtainPageText(url):
 	except requests.exceptions.RequestException as e:
 		return f"Network error: {e}"
 	except Exception as e:
-		return f"Rrror: {e}"
+		return f"Error: {e}"
 
 if __name__ == "__main__":
 	url = "https://www.google.com"

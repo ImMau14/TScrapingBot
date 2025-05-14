@@ -137,8 +137,6 @@ def search(message):
 			userURL = message.text.split(' ', 2)[1] if len(message.text.split()) > 1 else None
 			user_query = message.text.split(' ', 2)[2] if len(message.text.split()) > 1 else None
 
-			userURL = userURL.replace('&', '%26')
-
 			url = f"http://api.scrape.do?token={SCRAPEDO_TOKEN}&url={userURL}"
 
 			if not user_query:
