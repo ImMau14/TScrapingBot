@@ -74,6 +74,7 @@ def help(message):
 @bot.message_handler(commands=['dolar', f'dolar@{BOT_NAME}'])
 def dolar(message):
 	if message.text.startswith('/dolar@' + BOT_NAME) or message.chat.type == 'private':
+		bot.send_chat_action(message.chat.id, 'typing')
 		try:
 			result = getDolarValues()
 			if 'error' in result:
@@ -99,7 +100,7 @@ def dolar(message):
 @bot.message_handler(commands=['ask', f'ask@{BOT_NAME}'])
 def ask(message):
 	if message.text.startswith('/ask@' + BOT_NAME) or message.chat.type == 'private':
-		chat_id = message.chat.id
+		bot.send_chat_action(message.chat.id, 'typing')
 		try:
 			user_query = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 else None
 
@@ -136,7 +137,7 @@ def ask(message):
 @bot.message_handler(commands=['search', f'search@{BOT_NAME}'])
 def search(message):
 	if message.text.startswith('/search@' + BOT_NAME) or message.chat.type == 'private':
-		chat_id = message.chat.id
+		bot.send_chat_action(message.chat.id, 'typing')
 		try:
 			msg = message.text.split(' ', 2)
 			userURL = message.text.split(' ', 2)[1] if len(message.text.split()) > 1 else None
