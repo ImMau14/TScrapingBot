@@ -59,7 +59,7 @@ def sanitize_markdown_v1(text: str) -> str:
 @bot.message_handler(commands=['start', f'start@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def start(message):
 	if message.text.startswith('/start@' + BOT_NAME) or message.chat.type == 'private':
-		bot.reply_to(message, "Hello! 👋 I'm TScrapingBot, your Telegram assistant for web scraping and artificial intelligence.\n\nv1.1.0.")
+		bot.reply_to(message, "Hello! 👋 I'm TScrapingBot, your Telegram assistant for web scraping and artificial intelligence.")
 
 @bot.message_handler(commands=['ping', f'ping@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def ping(message):
