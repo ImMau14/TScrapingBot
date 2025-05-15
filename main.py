@@ -16,14 +16,6 @@ BOT_NAME = os.getenv('BOT_NAME')
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
-COMMAND_LIST = """*Commands*
-
-/ping - Ping command
-/help - Show this command list
-/dolar - Show the current dollar prices in Bs
-/ask <query> - Ask to Gemini 2.0
-/search <url> <query> - Search in the URL
-"""
 
 def sanitize_markdown_v1(text: str) -> str:
 	# Enmascarar bloques de código, inline y enlaces
@@ -56,11 +48,23 @@ def sanitize_markdown_v1(text: str) -> str:
 
 	return text
 
+# Función para dividir el texto
+def split_text(text, max_length=4096):
+	chunks = []
+	while len(text) > max_length:
+		split_index = text.rfind('\n', 0, max_length)  # Busca último salto de línea
+		if split_index == -1:
+			split_index = max_length  # Si no hay salto, corta al límite
+		chunks.append(text[:split_index])
+		text = text[split_index:]
+	chunks.append(text)
+	return chunks
+
 @bot.message_handler(commands=['start', f'start@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def start(message):
 	if message.text.startswith('/start@' + BOT_NAME) or message.chat.type == 'private':
 		bot.send_chat_action(message.chat.id, 'typing')
-		bot.reply_to(message, "Hello! 👋 I'm TScrapingBot, your Telegram assistant for web scraping and artificial intelligence.")
+		bot.reply_to(message, "Hello! 👋 I'm TScrapingBot, your Telegram assistant for web scraping and artificial intelligence. Use /help to see my commands.")
 
 @bot.message_handler(commands=['ping', f'ping@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def ping(message):
@@ -71,8 +75,17 @@ def ping(message):
 @bot.message_handler(commands=['help', f'help@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def help(message):
 	if message.text.startswith('/help@' + BOT_NAME) or message.chat.type == 'private':
+		COMMAND_LIST = [
+			"💬 *Commands*\n",
+			"/ping - Ping command",
+			"/help - Show this command list",
+			"/dolar - Show the current dollar prices in Bs",
+			"/ask `<query>` - Ask to Gemini 2.0",
+			"/search `<url>` `<query>` - Search in the URL"
+		]
+
 		bot.send_chat_action(message.chat.id, 'typing')
-		bot.reply_to(message, COMMAND_LIST, parse_mode="Markdown")
+		bot.reply_to(message, '\n'.join(COMMAND_LIST), parse_mode="Markdown")
 
 @bot.message_handler(commands=['dolar', f'dolar@{BOT_NAME}'])
 def dolar(message):
@@ -114,18 +127,6 @@ def ask(message):
 			r = g.ask(user_query)
 			r = sanitize_markdown_v1(r)
 
-			# Función para dividir el texto
-			def split_text(text, max_length=4096):
-				chunks = []
-				while len(text) > max_length:
-					split_index = text.rfind('\n', 0, max_length)  # Busca último salto de línea
-					if split_index == -1:
-						split_index = max_length  # Si no hay salto, corta al límite
-					chunks.append(text[:split_index])
-					text = text[split_index:]
-				chunks.append(text)
-				return chunks
-
 			# Dividir y enviar
 			chunks = split_text(r)
 			for i, chunk in enumerate(chunks):
@@ -148,26 +149,12 @@ def search(message):
 
 			userURL = userURL.replace('&', '%26')
 
-			# url = f"http://api.scrape.do?token={SCRAPEDO_TOKEN}&url={userURL}"
-
 			if not user_query:
 				return bot.reply_to(message)
 
 			g = Gemini(GEMINI_TOKEN, 'chat')
 			r = g.ask(f"{user_query} \n\n{obtainPageText(userURL, SCRAPEDO_TOKEN)} \n\nPage URL: {userURL}")
 			r = sanitize_markdown_v1(r)
-
-			# Función para dividir el texto
-			def split_text(text, max_length=4096):
-				chunks = []
-				while len(text) > max_length:
-					split_index = text.rfind('\n', 0, max_length)  # Busca último salto de línea
-					if split_index == -1:
-						split_index = max_length  # Si no hay salto, corta al límite
-					chunks.append(text[:split_index])
-					text = text[split_index:]
-				chunks.append(text)
-				return chunks
 
 			# Dividir y enviar
 			chunks = split_text(r)
