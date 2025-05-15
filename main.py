@@ -51,7 +51,7 @@ def splitText(text, max_length=4096):
 	chunks.append(text)
 	return chunks
 
-def divideAndSend(text):
+def divideAndSend(text, message):
 	if len(text) >= 4096:
 		chunks = splitText(text)
 		for i, chunk in enumerate(chunks):
@@ -124,7 +124,7 @@ def ask(message):
 
 			botResponse = gemini.ask(user_query)
 
-			divideAndSend(sanitizeMarkdownV1(botResponse))
+			divideAndSend(sanitizeMarkdownV1(botResponse), message)
 
 		except Exception as e:
 			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
@@ -145,7 +145,7 @@ def search(message):
 
 			botResponse = gemini.ask(f"{user_query} \n\n{obtainPageText(userURL, SCRAPEDO_TOKEN)} \n\nPage URL: {userURL}")
 
-			divideAndSend(sanitizeMarkdownV1(botResponse))
+			divideAndSend(sanitizeMarkdownV1(botResponse), message)
 
 		except Exception as e:
 			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
