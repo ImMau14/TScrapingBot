@@ -1,6 +1,6 @@
 import re
 
-def sanitizeMarkdownV1(text: str) -> str:
+def sanitizeMarkdownV1(text):
 	masks = []
 	def make_mask(match):
 		masks.append(match.group(0))

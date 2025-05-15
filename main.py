@@ -6,6 +6,10 @@ from modules.dolar_scraper import getDolarValues
 from modules.page_scraper import obtainPageText
 from modules.utils import sanitizeMarkdownV1
 from modules.utils import divideAndSend
+import json
+
+with open("./messages.json", "r", encoding="utf-8") as f:
+	MESSAGE_DATA = json.load(f)
 
 load_dotenv()
 app = Flask(__name__)
@@ -23,28 +27,19 @@ gemini = Gemini(GEMINI_TOKEN, 'chat')
 def start(message):
 	if message.text.startswith('/start@' + BOT_NAME) or message.chat.type == 'private':
 		bot.send_chat_action(message.chat.id, 'typing')
-		bot.reply_to(message, "Hello! 👋 I'm TScrapingBot, your Telegram assistant for web scraping and artificial intelligence. Use /help to see my commands.")
+		bot.reply_to(message, MESSAGE_DATA['start'])
 
 @bot.message_handler(commands=['ping', f'ping@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def ping(message):
 	if message.text.startswith('/ping@' + BOT_NAME) or message.chat.type == 'private':
 		bot.send_chat_action(message.chat.id, 'typing')
-		bot.reply_to(message, "I'm here! TScrapingBot online!")
+		bot.reply_to(message, MESSAGE_DATA['ping'])
 
 @bot.message_handler(commands=['help', f'help@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def help(message):
 	if message.text.startswith('/help@' + BOT_NAME) or message.chat.type == 'private':
-		COMMAND_LIST = [
-			"💬 *Commands*\n",
-			"/ping - Ping command",
-			"/help - Show this command list",
-			"/dolar - Show the current dollar prices in Bs",
-			"/ask `<query>` - Ask to Gemini 2.0",
-			"/search `<url>` `<query>` - Search in the URL"
-		]
-
 		bot.send_chat_action(message.chat.id, 'typing')
-		bot.reply_to(message, '\n'.join(COMMAND_LIST), parse_mode="Markdown")
+		bot.reply_to(message, '\n'.join(MESSAGE_DATA['commands']), parse_mode="Markdown")
 
 @bot.message_handler(commands=['dolar', f'dolar@{BOT_NAME}'])
 def dolar(message):
@@ -60,17 +55,16 @@ def dolar(message):
 				)
 				return
 
-			response = (
-				"🔥 *Current Dollar Prices*\n\n"
-				f"🏦 *Cen:* *{str(result['dolar-bcv']).replace('.', ',')}* Bs\\.\n"
-				f"📈 *Par:* *{str(result['dolar-par']).replace('.', ',')}* Bs\\.\n"
-				f"📊 *Avg:* *{str(result['dolar-pro']).replace('.', ',')}* Bs\\.\n"
+			response = MESSAGE_DATA['dolar'].format(
+				dolar_bcv=str(result['dolar-bcv']).replace('.', ','),
+				dolar_par=str(result['dolar-par']).replace('.', ','),
+				dolar_pro=str(result['dolar-pro']).replace('.', ',')
 			)
 
 			bot.reply_to(message, response, parse_mode="MarkdownV2")
 
 		except Exception as e:
-			bot.reply_to(message, f"*Critical Error:* `{str(e)}`", parse_mode="MarkdownV2")
+			bot.reply_to(message, f"*Error:* `{str(e)}`", parse_mode="MarkdownV2")
 
 @bot.message_handler(commands=['ask', f'ask@{BOT_NAME}'])
 def ask(message):
@@ -97,6 +91,9 @@ def search(message):
 			msg = message.text.split(' ', 2)
 			userURL = message.text.split(' ', 2)[1] if len(message.text.split()) > 1 else None
 			user_query = message.text.split(' ', 2)[2] if len(message.text.split()) > 1 else None
+
+			if not userURL or not user_query:
+				return bot.reply_to(message, "Usage: /ask <url> <query>.")
 
 			userURL = userURL.replace('&', '%26')
 
