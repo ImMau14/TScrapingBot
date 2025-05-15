@@ -70,13 +70,14 @@ def dolar(message):
 @bot.message_handler(commands=['ask', f'ask@{BOT_NAME}'])
 def ask(message):
 	if message.text.startswith('/ask@' + BOT_NAME) or message.chat.type == 'private':
-		bot.send_chat_action(message.chat.id, 'typing')
 		try:
-			user_query = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 else None
+			bot.send_chat_action(message.chat.id, 'typing')
+			if message.chat.type != 'private':
+				user_query = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 and not message.chat.type == 'private' else None
+				if not user_query:
+					return bot.reply_to(message, "Usage: /ask <query>.")
 
-			if not user_query and not message.chat.type == 'private':
-				return bot.reply_to(message, "Usage: /ask <query>.")
-
+			user_query = message.text
 			botResponse = gemini.ask(user_query)
 			divideAndSend(sanitizeMarkdownV1(botResponse), bot, message)
 
