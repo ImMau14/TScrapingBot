@@ -52,9 +52,12 @@ def splitText(text, max_length=4096):
 	return chunks
 
 def divideAndSend(text):
-	chunks = splitText(r)
-	for i, chunk in enumerate(chunks):
-		bot.reply_to(message, chunk, parse_mode="Markdown")
+	if len(text) >= 4096:
+		chunks = splitText(text)
+		for i, chunk in enumerate(chunks):
+			bot.reply_to(message, chunk, parse_mode="Markdown")
+	else:
+		bot.reply_to(message, text, parse_mode="Markdown")
 
 @bot.message_handler(commands=['start', f'start@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def start(message):
