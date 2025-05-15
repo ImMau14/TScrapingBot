@@ -66,6 +66,7 @@ def dolar(message):
 		except Exception as e:
 			bot.reply_to(message, f"*Error:* `{str(e)}`", parse_mode="MarkdownV2")
 
+@bot.message_handler(chat_types=["private"], content_types=["text"])
 @bot.message_handler(commands=['ask', f'ask@{BOT_NAME}'])
 def ask(message):
 	if message.text.startswith('/ask@' + BOT_NAME) or message.chat.type == 'private':
