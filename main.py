@@ -1,14 +1,15 @@
-import os
+import telebot, os
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
-import telebot
-from modules.dolar_scraper import getDolarValues
 from modules.gemini import Gemini
+from modules.dolar_scraper import getDolarValues
 from modules.page_scraper import obtainPageText
-import re
+from modules.utils import sanitizeMarkdownV1
+from modules.utils import divideAndSend
 
 load_dotenv()
 app = Flask(__name__)
+
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 GEMINI_TOKEN = os.getenv('GEMINI_TOKEN')
 SCRAPEDO_TOKEN = os.getenv('SCRAPEDO_TOKEN')
@@ -17,47 +18,6 @@ WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 gemini = Gemini(GEMINI_TOKEN, 'chat')
-
-def sanitizeMarkdownV1(text: str) -> str:
-	masks = []
-	def make_mask(match):
-		masks.append(match.group(0))
-		return f"__MASK{len(masks)-1}__"
-
-	text = re.sub(r'```[\s\S]*?```', make_mask, text)
-	text = re.sub(r'`[^`\n]+`', make_mask, text)
-	text = re.sub(r'\[([^\]]+)\]\(([^)\s]+(?:\s+"[^"]*")?)\)', make_mask, text)
-	text = re.sub(r'^[ \t]+', '', text, flags=re.MULTILINE)
-
-	for delim in ('*', '_', '`', '[', ']'):
-		if text.count(delim) % 2 == 1:
-			text = text.replace(delim, '\\' + delim)
-
-	for i, original in enumerate(masks):
-		text = text.replace(f"__MASK{i}__", original)
-
-	text = re.sub(r'(```[\s\S]*?```)\n{2}', r'\1\n', text)
-
-	return text
-
-def splitText(text, max_length=4096):
-	chunks = []
-	while len(text) > max_length:
-		split_index = text.rfind('\n', 0, max_length)
-		if split_index == -1:
-			split_index = max_length
-		chunks.append(text[:split_index])
-		text = text[split_index:]
-	chunks.append(text)
-	return chunks
-
-def divideAndSend(text, message):
-	if len(text) >= 4096:
-		chunks = splitText(text)
-		for i, chunk in enumerate(chunks):
-			bot.reply_to(message, chunk, parse_mode="Markdown")
-	else:
-		bot.reply_to(message, text, parse_mode="Markdown")
 
 @bot.message_handler(commands=['start', f'start@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def start(message):
@@ -124,7 +84,7 @@ def ask(message):
 
 			botResponse = gemini.ask(user_query)
 
-			divideAndSend(sanitizeMarkdownV1(botResponse), message)
+			divideAndSend(sanitizeMarkdownV1(botResponse), bot, message)
 
 		except Exception as e:
 			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
@@ -145,7 +105,7 @@ def search(message):
 
 			botResponse = gemini.ask(f"{user_query} \n\n{obtainPageText(userURL, SCRAPEDO_TOKEN)} \n\nPage URL: {userURL}")
 
-			divideAndSend(sanitizeMarkdownV1(botResponse), message)
+			divideAndSend(sanitizeMarkdownV1(botResponse), bot, message)
 
 		except Exception as e:
 			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
