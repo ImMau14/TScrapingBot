@@ -2,10 +2,8 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-MASKED = "token=****"
-
 def mask_token(text):
-	return re.sub(r'token=[^&\s]+', MASKED, text)
+	return re.sub(r'token=[^&\s]+', "token=****", text)
 
 def obtainPageText(_url, TOKEN=None):
 	if not TOKEN:
@@ -23,19 +21,19 @@ def obtainPageText(_url, TOKEN=None):
 		# Extrae el código y el mensaje original
 		code = e.response.status_code
 		reason = e.response.reason
-		err_url = mask_token(e.request.url, TOKEN=TOKEN)
+		err_url = mask_token(e.request.url)
 		if code == 400:
 			return "Error 400: solicitud malformada."
 		return f"HTTP {code} {reason} al acceder a {err_url}"
 
 	except requests.exceptions.RequestException as e:
 		# Captura timeouts, rechazos, DNS, etc.
-		err = mask_token(str(e), TOKEN=TOKEN)
+		err = mask_token(str(e))
 		return f"Error de red: {err}"
 
 	except Exception as e:
 		# Cualquier otro fallo
-		err = mask_token(str(e), TOKEN=TOKEN)
+		err = mask_token(str(e))
 		return f"Error interno: {e}."
 
 if __name__ == "__main__":
