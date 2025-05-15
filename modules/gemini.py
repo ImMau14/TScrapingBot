@@ -1,7 +1,7 @@
 import google.generativeai as genai
 import json
 
-with open("./gemini_config.json", "r", encoding="utf-8") as f:
+with open("./data/gemini_config.json", "r", encoding="utf-8") as f:
 	CONFIG = json.load(f)
 
 class Gemini:

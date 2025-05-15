@@ -8,7 +8,7 @@ from modules.utils import sanitizeMarkdownV1
 from modules.utils import divideAndSend
 import json
 
-with open("./messages.json", "r", encoding="utf-8") as f:
+with open("./data/messages.json", "r", encoding="utf-8") as f:
 	MESSAGE_DATA = json.load(f)
 
 load_dotenv()
