@@ -66,7 +66,7 @@ def dolar(message):
 		except Exception as e:
 			bot.reply_to(message, f"*Error:* `{str(e)}`", parse_mode="MarkdownV2")
 
-@bot.message_handler(chat_types=["private"], content_types=["text"])
+@bot.message_handler(chat_types=["private"], func=lambda message: message.text is not None and not message.text.startswith('/'))
 @bot.message_handler(commands=['ask', f'ask@{BOT_NAME}'])
 def ask(message):
 	if message.text.startswith('/ask@' + BOT_NAME) or message.chat.type == 'private':
@@ -94,7 +94,7 @@ def search(message):
 			user_query = message.text.split(' ', 2)[2] if len(message.text.split()) > 1 else None
 
 			if not userURL or not user_query:
-				return bot.reply_to(message, "Usage: /ask <url> <query>.")
+				return bot.reply_to(message, "Usage: /search <url> <query>.")
 
 			userURL = userURL.replace('&', '%26')
 
