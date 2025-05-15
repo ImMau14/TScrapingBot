@@ -74,11 +74,10 @@ def ask(message):
 		try:
 			user_query = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 else None
 
-			if not user_query:
+			if not user_query and not message.chat.type == 'private':
 				return bot.reply_to(message, "Usage: /ask <query>.")
 
 			botResponse = gemini.ask(user_query)
-
 			divideAndSend(sanitizeMarkdownV1(botResponse), bot, message)
 
 		except Exception as e:
@@ -102,7 +101,6 @@ def search(message):
 				return bot.reply_to(message)
 
 			botResponse = gemini.ask(f"{user_query} \n\n{obtainPageText(userURL, SCRAPEDO_TOKEN)} \n\nPage URL: {userURL}")
-
 			divideAndSend(sanitizeMarkdownV1(botResponse), bot, message)
 
 		except Exception as e:
