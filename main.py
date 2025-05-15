@@ -16,49 +16,45 @@ BOT_NAME = os.getenv('BOT_NAME')
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
+gemini = Gemini(GEMINI_TOKEN, 'chat')
 
-def sanitize_markdown_v1(text: str) -> str:
-	# Enmascarar bloques de código, inline y enlaces
+def sanitizeMarkdownV1(text: str) -> str:
 	masks = []
 	def make_mask(match):
 		masks.append(match.group(0))
 		return f"__MASK{len(masks)-1}__"
 
-	# Triple backticks (bloque de código)
 	text = re.sub(r'```[\s\S]*?```', make_mask, text)
-	# Inline code
 	text = re.sub(r'`[^`\n]+`', make_mask, text)
-	# Enlaces Markdown
 	text = re.sub(r'\[([^\]]+)\]\(([^)\s]+(?:\s+"[^"]*")?)\)', make_mask, text)
-
-	# Justificación izquierda en el resto
 	text = re.sub(r'^[ \t]+', '', text, flags=re.MULTILINE)
 
-	# Escapar delimitadores desbalanceados fuera de máscaras
 	for delim in ('*', '_', '`', '[', ']'):
 		if text.count(delim) % 2 == 1:
 			text = text.replace(delim, '\\' + delim)
 
-	# Restaurar máscaras
 	for i, original in enumerate(masks):
 		text = text.replace(f"__MASK{i}__", original)
 
-	# Quitar línea en blanco extra tras cada bloque de código
 	text = re.sub(r'(```[\s\S]*?```)\n{2}', r'\1\n', text)
 
 	return text
 
-# Función para dividir el texto
-def split_text(text, max_length=4096):
+def splitText(text, max_length=4096):
 	chunks = []
 	while len(text) > max_length:
-		split_index = text.rfind('\n', 0, max_length)  # Busca último salto de línea
+		split_index = text.rfind('\n', 0, max_length)
 		if split_index == -1:
-			split_index = max_length  # Si no hay salto, corta al límite
+			split_index = max_length
 		chunks.append(text[:split_index])
 		text = text[split_index:]
 	chunks.append(text)
 	return chunks
+
+def divideAndSend(text):
+	chunks = splitText(r)
+	for i, chunk in enumerate(chunks):
+		bot.reply_to(message, chunk, parse_mode="Markdown")
 
 @bot.message_handler(commands=['start', f'start@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def start(message):
@@ -121,19 +117,11 @@ def ask(message):
 			user_query = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 else None
 
 			if not user_query:
-				return bot.reply_to(message)
+				return bot.reply_to(message, "Usage: /ask <query>.")
 
-			g = Gemini(GEMINI_TOKEN, 'chat')
-			r = g.ask(user_query)
-			r = sanitize_markdown_v1(r)
+			botResponse = gemini.ask(user_query)
 
-			# Dividir y enviar
-			chunks = split_text(r)
-			for i, chunk in enumerate(chunks):
-				if i == 0:
-					bot.reply_to(message, chunk, parse_mode="Markdown")
-				else:
-					bot.reply_to(message, chunk, parse_mode="Markdown")
+			divideAndSend(sanitizeMarkdownV1(botResponse))
 
 		except Exception as e:
 			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
@@ -152,17 +140,9 @@ def search(message):
 			if not user_query:
 				return bot.reply_to(message)
 
-			g = Gemini(GEMINI_TOKEN, 'chat')
-			r = g.ask(f"{user_query} \n\n{obtainPageText(userURL, SCRAPEDO_TOKEN)} \n\nPage URL: {userURL}")
-			r = sanitize_markdown_v1(r)
+			botResponse = gemini.ask(f"{user_query} \n\n{obtainPageText(userURL, SCRAPEDO_TOKEN)} \n\nPage URL: {userURL}")
 
-			# Dividir y enviar
-			chunks = split_text(r)
-			for i, chunk in enumerate(chunks):
-				if i == 0:
-					bot.reply_to(message, chunk, parse_mode="Markdown")
-				else:
-					bot.reply_to(message, chunk, parse_mode="Markdown")
+			divideAndSend(sanitizeMarkdownV1(botResponse))
 
 		except Exception as e:
 			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
