@@ -7,7 +7,7 @@ from modules.page_scraper import obtainPageText
 from modules.utils import sanitizeMarkdownV1
 from modules.utils import divideAndSend
 from supabase import create_client
-from datetime import datetime
+import datetime
 import json
 
 with open("./data/messages.json", "r", encoding="utf-8") as f:
@@ -141,7 +141,7 @@ def ask(message):
 				'user_id': userId,
 				'chat_id': chatId,
 				'msg': user_query,
-				'datetime': datetime.now().timestamp(),
+				'datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
 				'ia_response': sanitizeMarkdownV1(botResponse)
 			}
 
