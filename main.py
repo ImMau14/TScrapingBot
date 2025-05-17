@@ -6,6 +6,7 @@ from modules.dolar_scraper import getDolarValues
 from modules.page_scraper import obtainPageText
 from modules.utils import sanitizeMarkdownV1
 from modules.utils import divideAndSend
+from supabase import create_client
 from datetime import datetime
 import json
 
@@ -23,6 +24,7 @@ WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 gemini = Gemini(GEMINI_TOKEN, 'chat')
+DB = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
 
 @bot.message_handler(commands=['start', f'start@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def start(message):
