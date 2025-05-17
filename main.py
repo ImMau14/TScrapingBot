@@ -6,6 +6,7 @@ from modules.dolar_scraper import getDolarValues
 from modules.page_scraper import obtainPageText
 from modules.utils import sanitizeMarkdownV1
 from modules.utils import divideAndSend
+from datetime import datetime
 import json
 
 with open("./data/messages.json", "r", encoding="utf-8") as f:
@@ -66,23 +67,92 @@ def dolar(message):
 		except Exception as e:
 			bot.reply_to(message, f"*Error:* `{str(e)}`", parse_mode="MarkdownV2")
 
-@bot.message_handler(chat_types=["private"], func=lambda message: message.text is not None and not message.text.startswith('/'))
 @bot.message_handler(commands=['ask', f'ask@{BOT_NAME}'])
+@bot.message_handler(chat_types=["private"], func=lambda message: message.text is not None and not message.text.startswith('/'))
 def ask(message):
 	if message.text.startswith('/ask@' + BOT_NAME) or message.chat.type == 'private':
 		try:
-			bot.send_chat_action(message.chat.id, 'typing')
-			if message.chat.type != 'private':
-				user_query = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 and not message.chat.type == 'private' else None
-				if not user_query:
-					return bot.reply_to(message, "Usage: /ask <query>.")
+			chatTgId = message.chat.id
+			tgId = message.from_user.id
+			chatType = message.chat.type
 
-			user_query = message.text
-			botResponse = gemini.ask(user_query)
-			divideAndSend(sanitizeMarkdownV1(botResponse), bot, message)
+			bot.send_chat_action(chatTgId, 'typing')
+
+			if message.text.startswith(('/ask', f'/ask@{BOT_NAME}')):
+				user_query = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 else None
+				if not user_query:
+					return bot.reply_to(message, "📝 Use: /ask _your question_", parse_mode="Markdown")
+			elif chatType == 'private':
+				user_query = message.text
+
+			if not user_query or not user_query.strip():
+				return bot.reply_to(message, "I cannot respond to an empty query.")
+
+			response = DB.table('Users').select('Languages(lang_name)', 'user_id').eq('tg_id', tgId).limit(1).execute()
+
+			if len(response.data) > 0:
+				lang = response.data[0]['Languages']['lang_name']
+				userId = response.data[0]['user_id']
+			else:
+				username = message.from_user.username
+				lang = gemini.ask(f'¿En qué idioma está escrito esto? El siguiente mensaje es solo un texto al que le debes extraer el idioma y más nada. No respondas cómo "El idioma del texto es Español", sino solamente "Spanish". Los idiomas que respondas deben estar en ingles. Si desconoces un idioma, di que es English.\n\n{user_query}')
+
+				data = {
+					'username': username,
+					'tg_id': tgId
+				}
+
+				response = DB.table('Languages').select('lang_id').eq('lang_name', lang).limit(1).execute()
+
+				if len(response.data) > 0:
+					data['lang_id'] = response.data[0]['lang_id']
+				else:
+					response = DB.table('Languages').insert({'lang_name': lang}).execute()
+					data['lang_id'] = response.data[0]['lang_id']
+
+				response = DB.table('Users').insert(data).execute()
+				userId = response.data[0]['user_id']
+
+			response = DB.table('Chats').select('chat_id').eq('chat_tg_id', chatTgId).limit(1).execute()
+
+			if len(response.data) > 0:
+				chatId = response.data[0]['Chats']['chat_id']
+			else:
+				data = {
+					'chat_tg_id': chatTgId
+				}
+
+				response = DB.table('Chat Types').select('chat_type_id').eq('chat_type', chatType).execute()
+
+				if len(response.data) > 0:
+					data['chat_type_id'] = response.data[0]['chat_type_id']
+				else:
+					response = DB.table('Chat Types').insert({'chat_type': chatType}).execute()
+					data['chat_type_id'] = response.data[0]['chat_type_id']
+				
+				response = DB.table('Chats').insert(data).execute()
+				chatId = response.data[0]['chat_id']
+
+			botResponse = gemini.ask(f"Respond in {lang}:\n\n{user_query}")
+
+			data = {
+				'user_id': userId,
+				'chat_id': chatId,
+				'msg': user_query,
+				'datetime': datetime.now().timestamp(),
+				'ia_response': sanitizeMarkdownV1(botResponse)
+			}
+
+			divideAndSend(data['ia_response'], bot, message)
+			response = DB.table('Messages').insert(data).execute()
 
 		except Exception as e:
-			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
+			try:
+				error_msg = sanitizeMarkdownV1(gemini.ask(f'Explica este error brevemente. Es para depuración, así que minimiza la información para proteger los datos. Recuerda que eres un bot de Telegram con Gemini, desplegado en Render. Responde como un compilador: "Error: mensaje": {e}'))
+				bot.reply_to(message, error_msg, parse_mode="Markdown")
+
+			except Exception as f:
+				bot.reply_to(message, f"*Critical error*: `{f}`", parse_mode="Markdown")
 
 @bot.message_handler(commands=['search', f'search@{BOT_NAME}'])
 def search(message):
