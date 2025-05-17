@@ -115,7 +115,7 @@ def ask(message):
 				response = DB.table('Users').insert(data).execute()
 				userId = response.data[0]['user_id']
 
-			response = DB.table('Chats').select('chat_id').eq('chat_tg_id', chatTgId).limit(1).execute()
+			response = DB.table('Chats').select('chat_id').eq('user_id', userId).limit(1).execute()
 
 			if len(response.data) > 0:
 				chatId = response.data[0]['Chats']['chat_id']
