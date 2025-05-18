@@ -131,18 +131,44 @@ def search(message):
 		try:
 			msg = message.text.split(' ', 2)
 			userURL = message.text.split(' ', 2)[1] if len(message.text.split()) > 1 else None
-			user_query = message.text.split(' ', 2)[2] if len(message.text.split()) > 1 else None
+			userQuery = message.text.split(' ', 2)[2] if len(message.text.split()) > 1 else None
 
-			if not userURL or not user_query:
+			if not userURL or not userQuery:
 				return bot.reply_to(message, "Usage: /search <url> <query>.")
-
 			userURL = userURL.replace('&', '%26')
 
-			if not user_query:
+			if not userQuery:
 				return bot.reply_to(message)
 
-			botResponse = gemini.ask(f"{user_query} \n\n{obtainPageText(userURL, SCRAPEDO_TOKEN)} \n\nPage URL: {userURL}")
-			divideAndSend(sanitizeMarkdownV1(botResponse), bot, message)
+			userId, chatId, lang = registerUserAndChat(
+				message.from_user.id,
+				userQuery,
+				message.from_user.username,
+				message.chat.id,
+				message.chat.type,
+				DB,
+				gemini
+			)
+
+			history = getHistory(DB, userId, chatId)
+			pageText = obtainPageText(userURL, SCRAPEDO_TOKEN)
+
+			promptParts = [f"Respond only in {lang} (not bilingual):\n\n{userQuery}\n\n{pageText}\n\nPage URL: {userURL}"]
+			if history:
+				promptParts.append(f"\n\n{history}")
+
+			botResponse = gemini.ask("".join(promptParts))
+
+			data = {
+				'user_id': userId,
+				'chat_id': chatId,
+				'msg': userQuery + "\n\n" + pageText + "\n\n" + userURL,
+				'datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
+				'ia_response': sanitizeMarkdownV1(botResponse)
+			}
+
+			divideAndSend(data['ia_response'], bot, message)
+			response = DB.table('Messages').insert(data).execute()
 
 		except Exception as e:
 			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
