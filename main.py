@@ -137,16 +137,13 @@ def ask(message):
 
 			response = DB.table('Messages').select('msg', 'ia_response').eq('is_cleared', False).execute()
 
+			history = None
 			if len(response.data) > 0:
 				history = f"History (you are the bot and I'm the user):\n\n"
-				for messages in response.data:
-					for message, answer in messages.items():
-						history += f"User: {message}\n\nBot: {answer}\n\n"
+				for count, messages in enumerate(response.data, start=1):
+					history += f"User: {messages['msg'].strip()}\n\nBot: {messages['ia_response'].strip()}{'\n\n' if not count == len(response.data) else ''}"
 
-			query = f"Respond only in {lang} (not bilingual):\n\n{user_query}\n\n{history if 'history' in locals() else ''}"
-			bot.reply_to(message, query, parse_mode="Markdown")
-
-			botResponse = gemini.ask(query)
+			botResponse = gemini.ask(f"Respond only in {lang} (not bilingual):\n\n{user_query}{f'\n\n{history}' if history else ''}")
 
 			data = {
 				'user_id': userId,
