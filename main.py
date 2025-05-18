@@ -135,7 +135,7 @@ def ask(message):
 				response = DB.table('Chats').insert(data).execute()
 				chatId = response.data[0]['chat_id']
 
-			response = DB.table('Messages').select('msg', 'ia_response').eq('is_cleared', False).execute()
+			response = DB.table('Messages').select('msg', 'ia_response').eq('chat_id', chatId).eq('is_cleared', False).execute()
 
 			history = None
 			if len(response.data) > 0:
