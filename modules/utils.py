@@ -46,10 +46,10 @@ def divideAndSend(text, bot, message):
 
 def handleError(bot, gemini, error, message):
 	try:
-		prompt = 'Explica este error brevemente. Es para depuración, así que minimiza la información para proteger los datos. Recuerda que eres un bot de Telegram con Gemini, desplegado en Render. Responde como un compilador: "Error: mensaje": {error}'
-		errorExplanation = gemini.ask(prompt.format(error=str(error)))
+		prompt = "Explica este error brevemente. Es para depuración, así que minimiza la información para proteger los datos. Recuerda que eres un bot de Telegram con Gemini, desplegado en Render. Responde como un compilador: (Error: mensaje): {error}"
+		errorExplanation = gemini.ask(prompt.format(error=error))
 		errorMsg = sanitizeMarkdownV1(errorExplanation)
 		bot.reply_to(message, errorMsg, parse_mode="MarkdownV1")
 
 	except Exception as e:
-		bot.reply_to(message, f"*Critical error*: `{e}`", parse_mode="MarkdownV1")
+		bot.reply_to(message, f"*Critical error*: `{str(e)}`", parse_mode="MarkdownV1")
