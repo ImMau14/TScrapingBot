@@ -90,7 +90,7 @@ def ask(message):
 				return bot.reply_to(message, "I cannot respond to an empty query.")
 
 			print("Comando detectado.")
-			print("Empezando la obtenci��n de datos")
+			print("Empezando la obtencion de datos")
 
 			userId, chatId, lang = registerUserAndChat(
 				message.from_user.id,
@@ -103,7 +103,7 @@ def ask(message):
 			)
 
 			print("Datos obtenidos")
-			print("Empezando la otenci��n del historial")
+			print("Empezando la obtencion del historial")
 
 			history = getHistory(DB, userId, chatId)
 
@@ -189,7 +189,7 @@ def reset(message):
 
 		except Exception as e:
 			try:
-				error_msg = sanitizeMarkdownV1(gemini.ask(f'Explica este error brevemente. Es para depuración, así que minimiza la información para proteger los datos. Recuerda que eres un bot de Telegram con Gemini, desplegado en Render. Responde como un compilador: "Error: mensaje": {e}'))
+				error_msg = sanitizeMarkdownV1(gemini.ask(f'Explica este error brevemente. Es para depuraci贸n, as铆 que minimiza la informaci贸n para proteger los datos. Recuerda que eres un bot de Telegram con Gemini, desplegado en Render. Responde como un compilador: "Error: mensaje": {e}'))
 				bot.reply_to(message, error_msg, parse_mode="Markdown")
 
 			except Exception as f:
@@ -198,7 +198,7 @@ def reset(message):
 
 @app.route('/')
 def health_check():
-	return "🤖 Bot activo", 200
+	return "馃 Bot activo", 200
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -207,7 +207,7 @@ def webhook():
 		update = telebot.types.Update.de_json(json_data)
 		bot.process_new_updates([update])
 		return ''
-	return 'Tipo de contenido inválido', 403
+	return 'Tipo de contenido inv谩lido', 403
 
 if __name__ == '__main__':
 	if os.environ.get('HOSTING'):
