@@ -89,8 +89,8 @@ def ask(message):
 			if not userQuery or not userQuery.strip():
 				return bot.reply_to(message, "I cannot respond to an empty query.")
 
-			print("Comando detectado.")
-			print("Empezando la obtencion de datos")
+			bot.reply_to(message, "Comando detectado.")
+			bot.reply_to(message, "Empezando la obtencion de datos")
 
 			userId, chatId, lang = registerUserAndChat(
 				message.from_user.id,
@@ -102,24 +102,24 @@ def ask(message):
 				gemini
 			)
 
-			print("Datos obtenidos")
-			print("Empezando la obtencion del historial")
+			bot.reply_to(message, "Datos obtenidos")
+			bot.reply_to(message, "Empezando la obtencion del historial")
 
 			history = getHistory(DB, userId, chatId)
 
-			print("Historial obtenido")
-			print("Empezando el formateo de historial")
+			bot.reply_to(message, "Historial obtenido")
+			bot.reply_to(message, "Empezando el formateo de historial")
 
 			promptParts = [f"Respond only in {lang} (not bilingual):\n\n{userQuery}"]
 			if history:
 				promptParts.append(f"\n\n{history}")
 
-			print("Historial formateado")
+			bot.reply_to(message, "Historial formateado")
 
 			botResponse = gemini.ask("".join(promptParts))
 
-			print("La IA ha respondido el mensaje")
-			print("Haciendo el registro")
+			bot.reply_to(message, "La IA ha respondido el mensaje")
+			bot.reply_to(message, "Haciendo el registro")
 
 			data = {
 				'user_id': userId,
@@ -129,22 +129,22 @@ def ask(message):
 				'ia_response': sanitizeMarkdownV1(botResponse)
 			}
 
-			print("Se ha hecho el registro")
-			print("Respondiendo al usuario")
+			bot.reply_to(message, "Se ha hecho el registro")
+			bot.reply_to(message, "Respondiendo al usuario")
 
 			divideAndSend(data['ia_response'], bot, message)
 			
-			print("Se ha enviado el mensaje")
-			print("Subiendo los datos")
+			bot.reply_to(message, "Se ha enviado el mensaje")
+			bot.reply_to(message, "Subiendo los datos")
 			
 			response = DB.table('Messages').insert(data).execute()
 			
-			print("Se ha subido los datos")
+			bot.reply_to(message, "Se ha subido los datos")
 
 		except Exception as e:
-			print("Error... Manejando el error")
+			bot.reply_to(message, "Error... Manejando el error")
 			handleError(bot, gemini, str(e), message)
-			print("Error manejado")
+			bot.reply_to(message, "Error manejado")
 
 @bot.message_handler(commands=['search', f'search@{BOT_NAME}'])
 def search(message):

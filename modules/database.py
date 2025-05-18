@@ -1,7 +1,7 @@
 # Log or reg the user in the database.
 def registerUserAndChat(tgId, userQuery, username, chatTgId, chatType, supabase, gemini):
 	# Obtains the user.
-	userResponse = DB.table('Users').select('Languages(lang_name)', 'user_id').eq('tg_id', tgId).limit(1).execute()
+	userResponse = supabase.table('Users').select('Languages(lang_name)', 'user_id').eq('tg_id', tgId).limit(1).execute()
 	
 	# If the user exists.
 	if len(userResponse.data) > 0:
@@ -13,7 +13,7 @@ def registerUserAndChat(tgId, userQuery, username, chatTgId, chatType, supabase,
 		lang = gemini.ask(f'En qué idioma está escrito esto? El siguiente mensaje es solo un texto al que le debes extraer el idioma y más nada. No respondas cómo "El idioma del texto es Español", sino solamente "Spanish". Los idiomas que respondas deben estar en ingles. Si desconoces un idioma, di que es English.\n\n{userQuery}').strip().title()
 
 		# If the language exist, get the value, else register the new language.
-		langResponse = DB.table('Languages').upsert(
+		langResponse = supabase.table('Languages').upsert(
 			{'lang_name': lang}, 
 			on_conflict='lang_name'
 		).execute()
@@ -25,17 +25,17 @@ def registerUserAndChat(tgId, userQuery, username, chatTgId, chatType, supabase,
 			'lang_id': langId
 		}
 
-		userResponse = DB.table('Users').insert(userData).execute()
+		userResponse = supabase.table('Users').insert(userData).execute()
 		userId = userResponse.data[0]['user_id']
 
 	# If the chat type exist, get the value, else register the new chat type.
-	chatTypeResponse = DB.table('Chat Types').upsert(
+	chatTypeResponse = supabase.table('Chat Types').upsert(
 		{'chat_type': chatType},
 		on_conflict='chat_type'
 	).execute()
 	chatTypeId = chatTypeResponse.data[0]['chat_type_id']
 
-	chatResponse = DB.table('Chats').upsert(
+	chatResponse = supabase.table('Chats').upsert(
 		{
 			'chat_tg_id': chatTgId,
 			'chat_type_id': chatTypeId
