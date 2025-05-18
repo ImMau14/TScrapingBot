@@ -43,15 +43,15 @@ def registerUserAndChat(tgId, userQuery, username, chatTgId, chatType, supabase,
 
 # Returns the user history
 def getHistory(supabase, userId, chatId):
-    response = supabase.table('Messages').select('msg', 'ia_response').eq('user_id', userId).eq('chat_id', chatId).eq('is_cleared', False).execute()
+	response = supabase.table('Messages').select('msg', 'ia_response').eq('user_id', userId).eq('chat_id', chatId).eq('is_cleared', False).execute()
 
-    history = None
-    if len(response.data) > 0:
-        entries = []
-        for message in response.data:
-            entry = f"User: {message['msg'].strip()}\n\nBot: {message['ia_response'].strip()}"
-            entries.append(entry)
+	history = None
+	if len(response.data) > 0:
+		entries = []
+		for message in response.data:
+			entry = f"User: {message['msg'].strip()}\n\nBot: {message['ia_response'].strip()}"
+			entries.append(entry)
 
-        history = "History (you are the bot and I'm the user):\n\n" + "\n\n".join(entries)
-    
-    return history
+		history = "History (you are the bot and I'm the user):\n\n" + "\n\n".join(entries)
+	
+	return history
