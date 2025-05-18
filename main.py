@@ -142,8 +142,11 @@ def ask(message):
 			bot.reply_to(message, "Se ha subido los datos")
 
 		except Exception as e:
-			bot.reply_to(message, "Error... Manejando el error")
-			handleError(bot, gemini, str(e), message)
+			bot.reply_to(message, f"Error: {str(e)}. Explicando el error...")
+			try:
+				handleError(bot, gemini, str(e), message)
+			except Exception as e:
+				return bot.reply_to(message, f"Ha ocurrido un error manejando otro error: {str(e)}", parse_mode="Markdown")
 			bot.reply_to(message, "Error manejado")
 
 @bot.message_handler(commands=['search', f'search@{BOT_NAME}'])

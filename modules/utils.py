@@ -52,4 +52,4 @@ def handleError(bot, gemini, error, message):
 		bot.reply_to(message, errorMsg, parse_mode="MarkdownV1")
 
 	except Exception as e:
-		bot.reply_to(message, f"*Critical error*: `{str(e)}`", parse_mode="MarkdownV1")
+		raise Exception(f"*Critical error*: `{str(e)}`")
