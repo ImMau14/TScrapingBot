@@ -135,7 +135,15 @@ def ask(message):
 				response = DB.table('Chats').insert(data).execute()
 				chatId = response.data[0]['chat_id']
 
-			botResponse = gemini.ask(f"Respond in {lang}:\n\n{user_query}")
+			response = DB.table('Messages').select('msg', 'ia_response').eq('is_cleared', False).execute()
+
+			if len(response.data) > 0:
+				history = "History (you are the bot and I'm the user):\n\n"
+				for messages in response.data:
+					for message, answer in messages.items():
+						history += f"User: {message}\n\nBot: {answer}\n\n"
+
+			botResponse = gemini.ask(f"Respond only in {lang} (not bilingual):\n\n{user_query}\n\n{history if 'history' in locals() else ""}")
 
 			data = {
 				'user_id': userId,
