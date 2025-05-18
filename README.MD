@@ -5,7 +5,7 @@ Un bot de Telegram enfocado en el web scraping aplicado con la inteligencia arti
 
 Clic aquí para usarlo en Telegram: [TScrapingBot](https://t.me/TScrapingBot)
 
-*[Readme in English](./README_ENG.MD)*
+*[Readme in English](./README_ENG.md)*
 </div>
 
 ## Funcionalidades
@@ -51,7 +51,7 @@ Los datos no serán compartidos con terceros ni utilizados para ningún otro fin
 * Crear un bot con [@BotFather](https://t.me/BotFather) (en Telegram).
 * Una API URL y token de [Supabase](https://supabase.com). 
   - La base de datos debe de tener esta estructura:
-  Aquí va a ir una imagen, pero no la he puesto aún...
+![Base de datos](https://cdn.discordapp.com/attachments/697811476362035251/1373732648110919741/image.png?ex=682b7bba&is=682a2a3a&hm=590764202e6392fc024ff12d65efe82aca71d6584d84b59b9956b1bed327e631&)
 
 Lo demás varía dependiendo si lo desplegarás o lo usarás local.
 

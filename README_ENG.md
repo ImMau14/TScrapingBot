@@ -51,7 +51,7 @@ The data will not be shared with third parties or used for any purpose other tha
 * Create a bot with [@BotFather](https://t.me/BotFather) (on Telegram).
 * A [Supabase](https://supabase.com/) API URL and token.
   - The database must have this structure:
-  An image will go here, but I haven't put it yet...
+![Database](https://cdn.discordapp.com/attachments/697811476362035251/1373732648110919741/image.png?ex=682b7bba&is=682a2a3a&hm=590764202e6392fc024ff12d65efe82aca71d6584d84b59b9956b1bed327e631&)
 
 The rest varies depending on whether you will deploy it or use it locally.
 
