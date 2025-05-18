@@ -89,9 +89,6 @@ def ask(message):
 			if not userQuery or not userQuery.strip():
 				return bot.reply_to(message, "I cannot respond to an empty query.")
 
-			bot.reply_to(message, "Comando detectado.")
-			bot.reply_to(message, "Empezando la obtencion de datos")
-
 			userId, chatId, lang = registerUserAndChat(
 				message.from_user.id,
 				userQuery,
@@ -102,24 +99,13 @@ def ask(message):
 				gemini
 			)
 
-			bot.reply_to(message, "Datos obtenidos")
-			bot.reply_to(message, "Empezando la obtencion del historial")
-
 			history = getHistory(DB, userId, chatId)
-
-			bot.reply_to(message, "Historial obtenido")
-			bot.reply_to(message, "Empezando el formateo de historial")
 
 			promptParts = [f"Respond only in {lang} (not bilingual):\n\n{userQuery}"]
 			if history:
 				promptParts.append(f"\n\n{history}")
 
-			bot.reply_to(message, "Historial formateado")
-
 			botResponse = gemini.ask("".join(promptParts))
-
-			bot.reply_to(message, "La IA ha respondido el mensaje")
-			bot.reply_to(message, "Haciendo el registro")
 
 			data = {
 				'user_id': userId,
@@ -129,25 +115,14 @@ def ask(message):
 				'ia_response': sanitizeMarkdownV1(botResponse)
 			}
 
-			bot.reply_to(message, "Se ha hecho el registro")
-			bot.reply_to(message, "Respondiendo al usuario")
-
 			divideAndSend(data['ia_response'], bot, message)
-			
-			bot.reply_to(message, "Se ha enviado el mensaje")
-			bot.reply_to(message, "Subiendo los datos")
-			
 			response = DB.table('Messages').insert(data).execute()
-			
-			bot.reply_to(message, "Se ha subido los datos")
 
 		except Exception as e:
-			bot.reply_to(message, f"Error: {str(e)}. Explicando el error...")
 			try:
 				handleError(bot, gemini, str(e), message)
 			except Exception as e:
-				return bot.reply_to(message, f"Ha ocurrido un error manejando otro error: {str(e)}", parse_mode="Markdown")
-			bot.reply_to(message, "Error manejado")
+				return bot.reply_to(message, f"*Critical Error*\n\n{str(e)}", parse_mode="Markdown")
 
 @bot.message_handler(commands=['search', f'search@{BOT_NAME}'])
 def search(message):
