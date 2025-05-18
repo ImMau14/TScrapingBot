@@ -144,6 +144,7 @@ def ask(message):
 						history += f"User: {message}\n\nBot: {answer}\n\n"
 
 			botResponse = gemini.ask(f"Respond only in {lang} (not bilingual):\n\n{user_query}\n\n{history if 'history' in locals() else ''}")
+			bot.reply_to(message, sanitizeMarkdownV1(botResponse), parse_mode="Markdown")
 
 			data = {
 				'user_id': userId,
