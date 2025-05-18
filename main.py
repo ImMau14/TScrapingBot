@@ -179,6 +179,30 @@ def search(message):
 		except Exception as e:
 			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
 
+@bot.message_handler(commands=['reset', f'reset@{BOT_NAME}'])
+def reset(message):
+	if message.text.startswith('/reset@' + BOT_NAME) or message.chat.type == 'private':
+		bot.send_chat_action(message.chat.id, 'typing')
+		try:
+			chatData = DB.table('Chats').select('chat_id').eq('chat_tg_id', message.chat.id).execute()
+
+			if not chatData.data:
+				return bot.reply_to(message, f"No messages found in this chat.", parse_mode="Markdown")
+
+			else:
+				chatId = chatData.data[0]['chat_id']
+				update_response = DB.table('Messages').update({'is_cleared': True}).eq('chat_id', chatId).eq('is_cleared', False).execute()
+				bot.reply_to(message, f"The history for this chat has been reset.", parse_mode="Markdown")
+
+		except Exception as e:
+			try:
+				error_msg = sanitizeMarkdownV1(gemini.ask(f'Explica este error brevemente. Es para depuración, así que minimiza la información para proteger los datos. Recuerda que eres un bot de Telegram con Gemini, desplegado en Render. Responde como un compilador: "Error: mensaje": {e}'))
+				bot.reply_to(message, error_msg, parse_mode="Markdown")
+
+			except Exception as f:
+				bot.reply_to(message, f"*Critical error*: `{f}`", parse_mode="Markdown")
+
+
 @app.route('/')
 def health_check():
 	return "🤖 Bot activo", 200

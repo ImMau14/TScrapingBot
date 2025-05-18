@@ -7,7 +7,9 @@
 		"/help - Show this command list",
 		"/dolar - Show the current dollar prices in Bs",
 		"/ask `<query>` - Ask to Gemini 2.0",
-		"/search `<url>` `<query>` - Search in the URL"
+		"/search `<url>` `<query>` - Search in the URL",
+		"/reset - Reset your chat history",
+		"/lang - Select your language"
 	],
 	"dolar": "🔥 *Current Dollar Prices*\n\n🏦 *Cen:* *{dolar_bcv}* Bs\\.\n📈 *Par:* *{dolar_par}* Bs\\.\n📊 *Avg:* *{dolar_pro}* Bs\\.\n"
 }
