@@ -119,7 +119,7 @@ def ask(message):
 			response = DB.table('Messages').insert(data).execute()
 
 		except Exception as e:
-			handleError(e)
+			handleError(bot, gemini, e)
 
 @bot.message_handler(commands=['search', f'search@{BOT_NAME}'])
 def search(message):
