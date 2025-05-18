@@ -139,11 +139,18 @@ def ask(message):
 
 			history = None
 			if len(response.data) > 0:
-				history = f"History (you are the bot and I'm the user):\n\n"
+				history = "History (you are the bot and I'm the user):\n\n"
 				for count, messages in enumerate(response.data, start=1):
-					history += f"User: {messages['msg'].strip()}\n\nBot: {messages['ia_response'].strip()}{'\\n\\n' if not count == len(response.data) else ''}"
+					entry = f"User: {messages['msg'].strip()}\n\nBot: {messages['ia_response'].strip()}"
+					if count < len(response.data):
+						entry += "\n\n"
+					history += entry
 
-			botResponse = gemini.ask(f"Respond only in {lang} (not bilingual):\n\n{user_query}{'\\n\\n' + history) if history else ''}")
+			prompt_parts = [f"Respond only in {lang} (not bilingual):\n\n{user_query}"]
+			if history:
+				prompt_parts.append(f"\n\n{history}")
+
+			botResponse = gemini.ask("".join(prompt_parts))
 
 			data = {
 				'user_id': userId,
