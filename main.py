@@ -186,13 +186,16 @@ def reset(message):
 		try:
 			chatData = DB.table('Chats').select('chat_id').eq('chat_tg_id', message.chat.id).execute()
 
-			if not chatData.data:
-				return bot.reply_to(message, f"No messages found in this chat.", parse_mode="Markdown")
+			if len(chatData.data) == 0:
+				return bot.reply_to(message, f"Not chat history.", parse_mode="Markdown")
 
-			else:
-				chatId = chatData.data[0]['chat_id']
-				update_response = DB.table('Messages').update({'is_cleared': True}).eq('chat_id', chatId).eq('is_cleared', False).execute()
-				bot.reply_to(message, f"The history for this chat has been reset.", parse_mode="Markdown")
+			chatId = chatData.data[0]['chat_id']
+			updateResponse = DB.table('Messages').update({'is_cleared': True}).eq('chat_id', chatId).eq('is_cleared', False).execute()
+
+			if len(updateResponse.data) == 0:
+				return bot.reply_to(message, f"This history has already been reset.", parse_mode="Markdown")
+
+			bot.reply_to(message, f"The history for this chat has been reset.", parse_mode="Markdown")
 
 		except Exception as e:
 			try:
