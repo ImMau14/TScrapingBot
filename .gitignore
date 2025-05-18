@@ -2,3 +2,4 @@
 venv/
 env/
 modules/__pycache__
+start.bat

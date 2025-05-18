@@ -1,6 +1,6 @@
 {
 	"start": "Hello! 👋 I'm TScrapingBot, your Telegram assistant for web scraping and artificial intelligence. Use /help to see my commands.",
-	"ping": "I'm here! TScrapingBot online!",
+	"ping": "I'm here! TScrapingBot v1.3.0 online!",
 	"commands": [
 		"💬 *Commands*\n",
 		"/ping - Ping command",
@@ -8,8 +8,7 @@
 		"/dolar - Show the current dollar prices in Bs",
 		"/ask `<query>` - Ask to Gemini 2.0",
 		"/search `<url>` `<query>` - Search in the URL",
-		"/reset - Reset your chat history",
-		"/lang - Select your language"
+		"/reset - Reset your chat history"
 	],
 	"dolar": "🔥 *Current Dollar Prices*\n\n🏦 *Cen:* *{dolar_bcv}* Bs\\.\n📈 *Par:* *{dolar_par}* Bs\\.\n📊 *Avg:* *{dolar_pro}* Bs\\.\n"
 }
