@@ -49,7 +49,7 @@ def handleError(bot, gemini, error, message):
 		prompt = "Explica este error brevemente. Es para depuración, así que minimiza la información para proteger los datos. Recuerda que eres un bot de Telegram con Gemini, desplegado en Render. Responde como un compilador: (Error: mensaje): {error}"
 		errorExplanation = gemini.ask(prompt.format(error=error))
 		errorMsg = sanitizeMarkdownV1(errorExplanation)
-		bot.reply_to(message, errorMsg, parse_mode="MarkdownV1")
+		bot.reply_to(message, errorMsg, parse_mode="Markdown")
 
 	except Exception as e:
 		raise Exception(f"*Critical error*: `{str(e)}`")
