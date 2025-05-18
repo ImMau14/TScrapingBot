@@ -1,5 +1,6 @@
 import re
 
+# Function to sanitize the MarkdownV1.
 def sanitizeMarkdownV1(text):
 	masks = []
 	def make_mask(match):
@@ -22,6 +23,7 @@ def sanitizeMarkdownV1(text):
 
 	return text
 
+# Function to split the text in diferents chunks.
 def splitText(text, max_length=4096):
 	chunks = []
 	while len(text) > max_length:
@@ -33,6 +35,7 @@ def splitText(text, max_length=4096):
 	chunks.append(text)
 	return chunks
 
+# Function to send the diferents chunks.
 def divideAndSend(text, bot, message):
 	if len(text) >= 4096:
 		chunks = splitText(text)
