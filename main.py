@@ -160,7 +160,7 @@ def reset(message):
 			chatId = chatData.data[0]['chat_id']
 
 			# Obtain the user_id from the Users table
-			userData = DB.table('Users').select('user_id').eq('user_tg_id', message.from_user.id).execute()
+			userData = DB.table('Users').select('user_id').eq('tg_id', message.from_user.id).execute()
 			if len(userData.data) == 0:
 				return bot.reply_to(message, "User not found.", parse_mode="Markdown")
 			user_id = userData.data[0]['user_id']
