@@ -29,7 +29,7 @@ def registerUserAndChat(tgId, userQuery, username, chatTgId, chatType, supabase,
 		on_conflict='chat_type'
 	).execute()
 	chatTypeId = chatTypeResponse.data[0]['chat_type_id']
-	
+
 	chatResponse = DB.table('Chats').upsert(
 		{
 			'chat_tg_id': chatTgId,
@@ -38,8 +38,11 @@ def registerUserAndChat(tgId, userQuery, username, chatTgId, chatType, supabase,
 		on_conflict='chat_tg_id'
 	).execute()
 	chatId = chatResponse.data[0]['chat_id']
-	
-	return userId, chatId, lang
+
+	try:
+		return userId, chatId, lang
+	except Exception as e:
+		raise Exception(f"Error in registerUserAndChat: {str(e)}")
 
 # Returns the user history
 def getHistory(supabase, userId, chatId):

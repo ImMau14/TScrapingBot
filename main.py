@@ -134,7 +134,7 @@ def ask(message):
 			bot.reply_to(message, f"Se ha subido el registro a la base de datos", parse_mode="Markdown")
 
 		except Exception as e:
-			handleError(bot, gemini, e, message)
+			handleError(bot, gemini, str(e), message)
 
 @bot.message_handler(commands=['search', f'search@{BOT_NAME}'])
 def search(message):
