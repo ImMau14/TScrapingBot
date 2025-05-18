@@ -40,3 +40,11 @@ def divideAndSend(text, bot, message):
 			bot.reply_to(message, chunk, parse_mode="Markdown")
 	else:
 		bot.reply_to(message, text, parse_mode="Markdown")
+
+def handleError(bot, gemini, error):
+	try:
+		error_msg = sanitizeMarkdownV1(gemini.ask(f'Explica este error brevemente. Es para depuración, así que minimiza la información para proteger los datos. Recuerda que eres un bot de Telegram con Gemini, desplegado en Render. Responde como un compilador: "Error: mensaje": {error}'))
+		bot.reply_to(message, error_msg, parse_mode="Markdown")
+
+	except Exception as e:
+		bot.reply_to(message, f"*Critical error*: `{f}`", parse_mode="Markdown")

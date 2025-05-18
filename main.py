@@ -6,6 +6,9 @@ from modules.dolar_scraper import getDolarValues
 from modules.page_scraper import obtainPageText
 from modules.utils import sanitizeMarkdownV1
 from modules.utils import divideAndSend
+from modules.utils import handleError
+from modules.database import getHistory
+from modules.database import registerUserAndChat
 from supabase import create_client
 import datetime
 import json
@@ -74,88 +77,40 @@ def dolar(message):
 def ask(message):
 	if message.text.startswith('/ask@' + BOT_NAME) or message.chat.type == 'private':
 		try:
-			chatTgId = message.chat.id
-			tgId = message.from_user.id
-			chatType = message.chat.type
-
-			bot.send_chat_action(chatTgId, 'typing')
+			bot.send_chat_action(message.chat.id, 'typing')
 
 			if message.text.startswith(('/ask', f'/ask@{BOT_NAME}')):
-				user_query = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 else None
-				if not user_query:
+				userQuery = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 else None
+				if not userQuery:
 					return bot.reply_to(message, "📝 Use: /ask _your question_", parse_mode="Markdown")
-			elif chatType == 'private':
-				user_query = message.text
+			elif message.chat.type == 'private':
+				userQuery = message.text
 
-			if not user_query or not user_query.strip():
+			if not userQuery or not userQuery.strip():
 				return bot.reply_to(message, "I cannot respond to an empty query.")
 
-			response = DB.table('Users').select('Languages(lang_name)', 'user_id').eq('tg_id', tgId).limit(1).execute()
+			userId, chatId, lang = registerUserAndChat(
+				message.from_user.id,
+				userQuery,
+				message.from_user.username,
+				message.chat.id,
+				message.chat.type,
+				DB,
+				gemini
+			)
 
-			if len(response.data) > 0:
-				lang = response.data[0]['Languages']['lang_name']
-				userId = response.data[0]['user_id']
-			else:
-				username = message.from_user.username
-				lang = gemini.ask(f'¿En qué idioma está escrito esto? El siguiente mensaje es solo un texto al que le debes extraer el idioma y más nada. No respondas cómo "El idioma del texto es Español", sino solamente "Spanish". Los idiomas que respondas deben estar en ingles. Si desconoces un idioma, di que es English.\n\n{user_query}')
+			history = getHistory(DB, userId, chatId)
 
-				data = {
-					'username': username,
-					'tg_id': tgId
-				}
-
-				response = DB.table('Languages').select('lang_id').eq('lang_name', lang).limit(1).execute()
-
-				if len(response.data) > 0:
-					data['lang_id'] = response.data[0]['lang_id']
-				else:
-					response = DB.table('Languages').insert({'lang_name': lang}).execute()
-					data['lang_id'] = response.data[0]['lang_id']
-
-				response = DB.table('Users').insert(data).execute()
-				userId = response.data[0]['user_id']
-
-			response = DB.table('Chats').select('chat_id').eq('chat_tg_id', chatTgId).limit(1).execute()
-
-			if len(response.data) > 0:
-				chatId = response.data[0]['chat_id']
-			else:
-				data = {
-					'chat_tg_id': chatTgId
-				}
-
-				response = DB.table('Chat Types').select('chat_type_id').eq('chat_type', chatType).execute()
-
-				if len(response.data) > 0:
-					data['chat_type_id'] = response.data[0]['chat_type_id']
-				else:
-					response = DB.table('Chat Types').insert({'chat_type': chatType}).execute()
-					data['chat_type_id'] = response.data[0]['chat_type_id']
-				
-				response = DB.table('Chats').insert(data).execute()
-				chatId = response.data[0]['chat_id']
-
-			response = DB.table('Messages').select('msg', 'ia_response').eq('chat_id', chatId).eq('is_cleared', False).execute()
-
-			history = None
-			if len(response.data) > 0:
-				history = "History (you are the bot and I'm the user):\n\n"
-				for count, messages in enumerate(response.data, start=1):
-					entry = f"User: {messages['msg'].strip()}\n\nBot: {messages['ia_response'].strip()}"
-					if count < len(response.data):
-						entry += "\n\n"
-					history += entry
-
-			prompt_parts = [f"Respond only in {lang} (not bilingual):\n\n{user_query}"]
+			promptParts = [f"Respond only in {lang} (not bilingual):\n\n{userQuery}"]
 			if history:
-				prompt_parts.append(f"\n\n{history}")
+				promptParts.append(f"\n\n{history}")
 
-			botResponse = gemini.ask("".join(prompt_parts))
+			botResponse = gemini.ask("".join(promptParts))
 
 			data = {
 				'user_id': userId,
 				'chat_id': chatId,
-				'msg': user_query,
+				'msg': userQuery,
 				'datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
 				'ia_response': sanitizeMarkdownV1(botResponse)
 			}
@@ -164,12 +119,7 @@ def ask(message):
 			response = DB.table('Messages').insert(data).execute()
 
 		except Exception as e:
-			try:
-				error_msg = sanitizeMarkdownV1(gemini.ask(f'Explica este error brevemente. Es para depuración, así que minimiza la información para proteger los datos. Recuerda que eres un bot de Telegram con Gemini, desplegado en Render. Responde como un compilador: "Error: mensaje": {e}'))
-				bot.reply_to(message, error_msg, parse_mode="Markdown")
-
-			except Exception as f:
-				bot.reply_to(message, f"*Critical error*: `{f}`", parse_mode="Markdown")
+			handleError(e)
 
 @bot.message_handler(commands=['search', f'search@{BOT_NAME}'])
 def search(message):
