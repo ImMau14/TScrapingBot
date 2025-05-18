@@ -152,27 +152,31 @@ def reset(message):
 	if message.text.startswith('/reset@' + BOT_NAME) or message.chat.type == 'private':
 		bot.send_chat_action(message.chat.id, 'typing')
 		try:
+			# Obtain chat data
 			chatData = DB.table('Chats').select('chat_id').eq('chat_tg_id', message.chat.id).execute()
-
 			if len(chatData.data) == 0:
-				return bot.reply_to(message, f"Not chat history.", parse_mode="Markdown")
-
+				return bot.reply_to(message, "Not data for this chat.", parse_mode="Markdown")
+			
 			chatId = chatData.data[0]['chat_id']
-			updateResponse = DB.table('Messages').update({'is_cleared': True}).eq('chat_id', chatId).eq('is_cleared', False).execute()
+
+			# Obtain the user_id from the Users table
+			userData = DB.table('Users').select('user_id').eq('user_tg_id', message.from_user.id).execute()
+			if len(userData.data) == 0:
+				return bot.reply_to(message, "User not found.", parse_mode="Markdown")
+			user_id = userData.data[0]['user_id']
+
+			updateResponse = DB.table('Messages').update({'is_cleared': True}).eq('chat_id', chatId).eq('user_id', user_id).eq('is_cleared', False).execute()
 
 			if len(updateResponse.data) == 0:
-				return bot.reply_to(message, f"This history has already been reset.", parse_mode="Markdown")
+				return bot.reply_to(message, "The history chat is already reset.", parse_mode="Markdown")
 
-			bot.reply_to(message, f"The history for this chat has been reset.", parse_mode="Markdown")
+			bot.reply_to(message, "The history chat has been reset.", parse_mode="Markdown")
 
 		except Exception as e:
 			try:
-				error_msg = sanitizeMarkdownV1(gemini.ask(f'Explica este error brevemente. Es para depuraci贸n, as铆 que minimiza la informaci贸n para proteger los datos. Recuerda que eres un bot de Telegram con Gemini, desplegado en Render. Responde como un compilador: "Error: mensaje": {e}'))
-				bot.reply_to(message, error_msg, parse_mode="Markdown")
-
-			except Exception as f:
-				bot.reply_to(message, f"*Critical error*: `{f}`", parse_mode="Markdown")
-
+				handleError(bot, gemini, str(e), message)
+			except Exception as e:
+				return bot.reply_to(message, f"*Critical Error*\n\n{str(e)}", parse_mode="Markdown")
 
 @app.route('/')
 def health_check():
