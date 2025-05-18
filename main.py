@@ -82,12 +82,14 @@ def ask(message):
 			if message.text.startswith(('/ask', f'/ask@{BOT_NAME}')):
 				userQuery = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 else None
 				if not userQuery:
-					return bot.reply_to(message, "📝 Use: /ask _your question_", parse_mode="Markdown")
+					return bot.reply_to(message, "Use: /ask _your question_", parse_mode="Markdown")
 			elif message.chat.type == 'private':
 				userQuery = message.text
 
 			if not userQuery or not userQuery.strip():
 				return bot.reply_to(message, "I cannot respond to an empty query.")
+
+			bot.reply_to(message, f"Comando detectado.", parse_mode="Markdown")
 
 			userId, chatId, lang = registerUserAndChat(
 				message.from_user.id,
@@ -99,13 +101,21 @@ def ask(message):
 				gemini
 			)
 
+			bot.reply_to(message, f"Usuario seleccionado", parse_mode="Markdown")
+
 			history = getHistory(DB, userId, chatId)
+
+			bot.reply_to(message, f"Historial cargado", parse_mode="Markdown")
 
 			promptParts = [f"Respond only in {lang} (not bilingual):\n\n{userQuery}"]
 			if history:
 				promptParts.append(f"\n\n{history}")
 
+			bot.reply_to(message, f"Historial en prompParts", parse_mode="Markdown")
+
 			botResponse = gemini.ask("".join(promptParts))
+
+			bot.reply_to(message, f"La IA ha analizado el mensaje", parse_mode="Markdown")
 
 			data = {
 				'user_id': userId,
@@ -115,8 +125,13 @@ def ask(message):
 				'ia_response': sanitizeMarkdownV1(botResponse)
 			}
 
+			bot.reply_to(message, f"Se ha hecho el registro", parse_mode="Markdown")
+
 			divideAndSend(data['ia_response'], bot, message)
+			bot.reply_to(message, f"Se ha enviado el mensaje", parse_mode="Markdown")
+			
 			response = DB.table('Messages').insert(data).execute()
+			bot.reply_to(message, f"Se ha subido el registro a la base de datos", parse_mode="Markdown")
 
 		except Exception as e:
 			handleError(bot, gemini, e)
