@@ -29,7 +29,7 @@ Clic aquí para usarlo en Telegram: [TScrapingBot](https://t.me/TScrapingBot)
 
 ## Datos y Privacidad
 
-### Los Datos y la Experiencia
+### Los Datos y Experiencia
 
 * Para que el historial y el lenguaje de las respuestas de Gemini funcionen correctamente, es necesario que el usuario esté registrado en la base de datos para obtener su idioma de preferencia antes de generar la respuesta.
 
