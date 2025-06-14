@@ -1,4 +1,4 @@
-import telebot, os
+import telebot, os, logging, datetime, json
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 from modules.gemini import Gemini
@@ -10,8 +10,6 @@ from modules.utils import handleError
 from modules.database import getHistory
 from modules.database import registerUserAndChat
 from supabase import create_client
-import datetime
-import json
 
 with open("./data/messages.json", "r", encoding="utf-8") as f:
 	MESSAGE_DATA = json.load(f)
@@ -28,6 +26,13 @@ WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 gemini = Gemini(GEMINI_TOKEN, 'chat')
 DB = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
+
+logging.basicConfig(
+	level=logging.INFO,
+	format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger = logging.getLogger(__name__)
 
 @bot.message_handler(commands=['start', f'start@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
 def start(message):
@@ -70,6 +75,7 @@ def dolar(message):
 			bot.reply_to(message, response, parse_mode="MarkdownV2")
 
 		except Exception as e:
+			logger.error(f"Error: {e}")
 			bot.reply_to(message, f"*Error:* `{str(e)}`", parse_mode="MarkdownV2")
 
 @bot.message_handler(commands=['ask', f'ask@{BOT_NAME}'])
@@ -122,6 +128,7 @@ def ask(message):
 			try:
 				handleError(bot, gemini, str(e), message)
 			except Exception as e:
+				logger.error(f"Error: {e}")
 				return bot.reply_to(message, f"*Critical Error*\n\n{str(e)}", parse_mode="Markdown")
 
 @bot.message_handler(commands=['search', f'search@{BOT_NAME}'])
@@ -171,7 +178,11 @@ def search(message):
 			response = DB.table('Messages').insert(data).execute()
 
 		except Exception as e:
-			bot.reply_to(message, f"*Error*: `{e}`", parse_mode="Markdown")
+			try:
+				handleError(bot, gemini, str(e), message)
+			except Exception as e:
+				logger.error(f"Error: {e}")
+				return bot.reply_to(message, f"*Critical Error*\n\n{str(e)}", parse_mode="Markdown")
 
 @bot.message_handler(commands=['reset', f'reset@{BOT_NAME}'])
 def reset(message):
@@ -202,11 +213,12 @@ def reset(message):
 			try:
 				handleError(bot, gemini, str(e), message)
 			except Exception as e:
+				logger.error(f"Error: {e}")
 				return bot.reply_to(message, f"*Critical Error*\n\n{str(e)}", parse_mode="Markdown")
 
 @app.route('/')
 def health_check():
-	return "馃 Bot activo", 200
+	return "Bot activo", 200
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -215,14 +227,28 @@ def webhook():
 		update = telebot.types.Update.de_json(json_data)
 		bot.process_new_updates([update])
 		return ''
-	return 'Tipo de contenido inv谩lido', 403
+	return 'Tipo de contenido inválido', 403
 
 if __name__ == '__main__':
-	if os.environ.get('HOSTING'):
-		from waitress import serve
-		bot.remove_webhook()
-		bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
-		serve(app, host='0.0.0.0', port=8080)
-	else:
-		bot.delete_webhook()
-		bot.infinity_polling()
+	try:
+		logger.info("Starting Telegram bot...")
+		logger.info(f"Token: {TELEGRAM_TOKEN[:5]}...{TELEGRAM_TOKEN[-5:]}")
+		logger.info(f"Bot name: {BOT_NAME}")
+
+		if os.environ.get('HOSTING'):
+			from waitress import serve
+			logger.info("Mode: Webhook (hosting)")
+			bot.remove_webhook()
+			bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
+			logger.info(f"Webhook configured at: {WEBHOOK_URL}/webhook")
+			logger.info("Bot started successfully. Waiting for messages...")
+			serve(app, host='0.0.0.0', port=8080)
+		else:
+			logger.info("Mode: Polling (local)")
+			bot.delete_webhook()
+			logger.info("Bot started successfully. Waiting for messages...")
+			bot.infinity_polling()
+
+	except Exception as e:
+		logger.exception("Fatal error during bot startup")
+		raise
