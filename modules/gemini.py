@@ -1,5 +1,6 @@
 import google.generativeai as genai
-import json
+import json, requests
+from os import remove
 
 with open("./data/gemini_config.json", "r", encoding="utf-8") as f:
 	CONFIG = json.load(f)
@@ -25,9 +26,18 @@ class Gemini:
 			)
 		)
 
-	def ask(self, prompt):
+	def ask(self, prompt, photoUrl = None):
 		try:
-			respuesta = self.modelo.generate_content(prompt)
+			if photoUrl:
+				with open("temp_image.jpg", "wb") as f:
+					f.write(requests.get(photoUrl).content)
+
+				uploadedImage = genai.upload_file(path='temp_image.jpg', display_name='photo.jpg')
+				respuesta = self.modelo.generate_content([prompt, uploadedImage])
+				remove("temp_image.jpg")
+			else:
+				respuesta = self.modelo.generate_content(prompt)
+
 			return respuesta.text
 		except Exception as e:
 			return f"Error: {str(e)}"
