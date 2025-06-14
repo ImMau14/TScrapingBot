@@ -1,8 +1,11 @@
 import google.generativeai as genai
-import json
 
-with open("./data/gemini_config.json", "r", encoding="utf-8") as f:
-	CONFIG = json.load(f)
+try:
+	with open("./data/gemini_config.json", "r", encoding="utf-8") as f:
+		from json import load
+		CONFIG = load(f)
+except Exception as e:
+	print("Failed to load gemini_config.json\nYou will need to specify the mode when initializing the class to avoid errors\nDetails: ", str(e))
 
 class Gemini:
 	def __init__(self, token, mode=None):
@@ -25,9 +28,9 @@ class Gemini:
 			)
 		)
 
-	def ask(self, prompt):
+	# Recomended: .jpg format for images.
+	def ask(self, prompt, photoUrl = None):
 		try:
-			respuesta = self.modelo.generate_content(prompt)
-			return respuesta.text
+			return self.modelo.generate_content([prompt, photoUrl] if photoUrl else prompt)
 		except Exception as e:
 			return f"Error: {str(e)}"
