@@ -1,254 +1,174 @@
-import telebot, os, logging, datetime, json
-from flask import Flask, request, jsonify
+import os, json, logging, datetime
 from dotenv import load_dotenv
+from quart import Quart, request
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.constants import ParseMode
+from modules.utils import sanitize_markdown_v1
+from modules.utils import divide_and_send
+from modules.utils import validate_command
+from modules.dolar_scraper import get_dolar_values
 from modules.gemini import Gemini
-from modules.dolar_scraper import getDolarValues
-from modules.page_scraper import obtainPageText
-from modules.utils import sanitizeMarkdownV1
-from modules.utils import divideAndSend
-from modules.utils import handleError
-from modules.database import getHistory
-from modules.database import registerUserAndChat
+from modules.database import get_history
+from modules.database import register_user_and_chat
 from supabase import create_client
+
+load_dotenv()
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+GEMINI_TOKEN = os.getenv("GEMINI_TOKEN")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+app = Quart(__name__)
+bot_app = (Application.builder().token(TELEGRAM_TOKEN).build())
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+gemini = Gemini(GEMINI_TOKEN, "chat")
+DB = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 with open("./data/messages.json", "r", encoding="utf-8") as f:
 	MESSAGE_DATA = json.load(f)
 
-load_dotenv()
-app = Flask(__name__)
+@validate_command("start")
+async def start(update, context, message):
+	await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+	await message.reply_text(MESSAGE_DATA["start"], parse_mode=ParseMode.MARKDOWN)
 
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-GEMINI_TOKEN = os.getenv('GEMINI_TOKEN')
-SCRAPEDO_TOKEN = os.getenv('SCRAPEDO_TOKEN')
-BOT_NAME = os.getenv('BOT_NAME')
-WEBHOOK_URL = os.getenv('WEBHOOK_URL')
+@validate_command("ping")
+async def ping(update, context, message):
+	await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+	await message.reply_text(MESSAGE_DATA["ping"], parse_mode=ParseMode.MARKDOWN)
 
-bot = telebot.TeleBot(TELEGRAM_TOKEN)
-gemini = Gemini(GEMINI_TOKEN, 'chat')
-DB = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
+@validate_command("help")
+async def help(update, context, message):
+	await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+	await message.reply_text('\n'.join(MESSAGE_DATA["help"]), parse_mode=ParseMode.MARKDOWN)
 
-logging.basicConfig(
-	level=logging.INFO,
-	format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
-logger = logging.getLogger(__name__)
-
-@bot.message_handler(commands=['start', f'start@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
-def start(message):
-	if message.text.startswith('/start@' + BOT_NAME) or message.chat.type == 'private':
-		bot.send_chat_action(message.chat.id, 'typing')
-		bot.reply_to(message, MESSAGE_DATA['start'])
-
-@bot.message_handler(commands=['ping', f'ping@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
-def ping(message):
-	if message.text.startswith('/ping@' + BOT_NAME) or message.chat.type == 'private':
-		bot.send_chat_action(message.chat.id, 'typing')
-		bot.reply_to(message, MESSAGE_DATA['ping'])
-
-@bot.message_handler(commands=['help', f'help@{BOT_NAME}'], chat_types=["private", "group", "supergroup"])
-def help(message):
-	if message.text.startswith('/help@' + BOT_NAME) or message.chat.type == 'private':
-		bot.send_chat_action(message.chat.id, 'typing')
-		bot.reply_to(message, '\n'.join(MESSAGE_DATA['commands']), parse_mode="Markdown")
-
-@bot.message_handler(commands=['dolar', f'dolar@{BOT_NAME}'])
-def dolar(message):
-	if message.text.startswith('/dolar@' + BOT_NAME) or message.chat.type == 'private':
-		bot.send_chat_action(message.chat.id, 'typing')
-		try:
-			result = getDolarValues()
-			if 'error' in result:
-				bot.reply_to(
-					message,
-					f"*Error:* `{result['error']}`\n_Details:_ `{result['details']}`",
-					parse_mode="MarkdownV2"
-				)
-				return
-
-			response = MESSAGE_DATA['dolar'].format(
-				dolar_bcv=str(result['dolar-bcv']).replace('.', ','),
-				dolar_par=str(result['dolar-par']).replace('.', ','),
-				dolar_pro=str(result['dolar-pro']).replace('.', ',')
-			)
-
-			bot.reply_to(message, response, parse_mode="MarkdownV2")
-
-		except Exception as e:
-			logger.error(f"Error: {e}")
-			bot.reply_to(message, f"*Error:* `{str(e)}`", parse_mode="MarkdownV2")
-
-@bot.message_handler(commands=['ask', f'ask@{BOT_NAME}'])
-@bot.message_handler(chat_types=["private"], func=lambda message: message.text is not None and not message.text.startswith('/'))
-def ask(message):
-	if message.text.startswith('/ask@' + BOT_NAME) or message.chat.type == 'private':
-		try:
-			bot.send_chat_action(message.chat.id, 'typing')
-
-			# Selecting the userQuery.
-			if message.text.startswith(('/ask', f'/ask@{BOT_NAME}')):
-				userQuery = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 else None
-				if not userQuery:
-					return bot.reply_to(message, "Use: /ask _your question_", parse_mode="Markdown")
-			elif message.chat.type == 'private':
-				userQuery = message.text
-			if not userQuery or not userQuery.strip():
-				return bot.reply_to(message, "I cannot respond to an empty query.")
-
-			userId, chatId, lang = registerUserAndChat(
-				message.from_user.id,
-				userQuery,
-				message.from_user.username,
-				message.chat.id,
-				message.chat.type,
-				DB,
-				gemini
-			)
-
-			history = getHistory(DB, userId, chatId)
-
-			promptParts = [f"Respond only in {lang} (not bilingual):\n\n{userQuery}"]
-			if history:
-				promptParts.append(f"\n\n{history}")
-
-			botResponse = gemini.ask("".join(promptParts))
-
-			data = {
-				'user_id': userId,
-				'chat_id': chatId,
-				'msg': userQuery,
-				'datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
-				'ia_response': sanitizeMarkdownV1(botResponse)
-			}
-
-			divideAndSend(data['ia_response'], bot, message)
-			response = DB.table('Messages').insert(data).execute()
-
-		except Exception as e:
-			try:
-				handleError(bot, gemini, str(e), message)
-			except Exception as e:
-				logger.error(f"Error: {e}")
-				return bot.reply_to(message, f"*Critical Error*\n\n{str(e)}", parse_mode="Markdown")
-
-@bot.message_handler(commands=['search', f'search@{BOT_NAME}'])
-def search(message):
-	if message.text.startswith('/search@' + BOT_NAME) or message.chat.type == 'private':
-		bot.send_chat_action(message.chat.id, 'typing')
-		try:
-			msg = message.text.split(' ', 2)
-			userURL = message.text.split(' ', 2)[1] if len(message.text.split()) > 1 else None
-			userQuery = message.text.split(' ', 2)[2] if len(message.text.split()) > 1 else None
-
-			if not userURL or not userQuery:
-				return bot.reply_to(message, "Usage: /search <url> <query>.")
-			userURL = userURL.replace('&', '%26')
-
-			if not userQuery:
-				return bot.reply_to(message)
-
-			userId, chatId, lang = registerUserAndChat(
-				message.from_user.id,
-				userQuery,
-				message.from_user.username,
-				message.chat.id,
-				message.chat.type,
-				DB,
-				gemini
-			)
-
-			history = getHistory(DB, userId, chatId)
-			pageText = obtainPageText(userURL, SCRAPEDO_TOKEN)
-
-			promptParts = [f"Respond only in {lang} (not bilingual):\n\n{userQuery}\n\n{pageText}\n\nPage URL: {userURL}"]
-			if history:
-				promptParts.append(f"\n\n{history}")
-
-			botResponse = gemini.ask("".join(promptParts))
-
-			data = {
-				'user_id': userId,
-				'chat_id': chatId,
-				'msg': userQuery + "\n\n" + pageText + "\n\n" + userURL,
-				'datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
-				'ia_response': sanitizeMarkdownV1(botResponse)
-			}
-
-			divideAndSend(data['ia_response'], bot, message)
-			response = DB.table('Messages').insert(data).execute()
-
-		except Exception as e:
-			try:
-				handleError(bot, gemini, str(e), message)
-			except Exception as e:
-				logger.error(f"Error: {e}")
-				return bot.reply_to(message, f"*Critical Error*\n\n{str(e)}", parse_mode="Markdown")
-
-@bot.message_handler(commands=['reset', f'reset@{BOT_NAME}'])
-def reset(message):
-	if message.text.startswith('/reset@' + BOT_NAME) or message.chat.type == 'private':
-		bot.send_chat_action(message.chat.id, 'typing')
-		try:
-			# Obtain chat data
-			chatData = DB.table('Chats').select('chat_id').eq('chat_tg_id', message.chat.id).execute()
-			if len(chatData.data) == 0:
-				return bot.reply_to(message, "Not data for this chat.", parse_mode="Markdown")
-			
-			chatId = chatData.data[0]['chat_id']
-
-			# Obtain the user_id from the Users table
-			userData = DB.table('Users').select('user_id').eq('tg_id', message.from_user.id).execute()
-			if len(userData.data) == 0:
-				return bot.reply_to(message, "User not found.", parse_mode="Markdown")
-			user_id = userData.data[0]['user_id']
-
-			updateResponse = DB.table('Messages').update({'is_cleared': True}).eq('chat_id', chatId).eq('user_id', user_id).eq('is_cleared', False).execute()
-
-			if len(updateResponse.data) == 0:
-				return bot.reply_to(message, "The history chat is already reset.", parse_mode="Markdown")
-
-			bot.reply_to(message, "The history chat has been reset.", parse_mode="Markdown")
-
-		except Exception as e:
-			try:
-				handleError(bot, gemini, str(e), message)
-			except Exception as e:
-				logger.error(f"Error: {e}")
-				return bot.reply_to(message, f"*Critical Error*\n\n{str(e)}", parse_mode="Markdown")
-
-@app.route('/')
-def health_check():
-	return "Bot activo", 200
-
-@app.route('/webhook', methods=['POST'])
-def webhook():
-	if request.headers.get('content-type') == 'application/json':
-		json_data = request.get_data().decode('utf-8')
-		update = telebot.types.Update.de_json(json_data)
-		bot.process_new_updates([update])
-		return ''
-	return 'Tipo de contenido inválido', 403
-
-if __name__ == '__main__':
+@validate_command("dolar")
+async def dolar(update, context, message):
+	await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
 	try:
-		logger.info("Starting Telegram bot...")
-		logger.info(f"Token: {TELEGRAM_TOKEN[:5]}...{TELEGRAM_TOKEN[-5:]}")
-		logger.info(f"Bot name: {BOT_NAME}")
+		result = await get_dolar_values()
+		if "error" in result:
+			await message.reply_text(f'*Error:* `{result["error"]}`\n_Details:_ `{result["details"]}`', parse_mode=ParseMode.MARKDOWN_V2)
+			return
 
-		if os.environ.get('HOSTING'):
-			from waitress import serve
-			logger.info("Mode: Webhook (hosting)")
-			bot.remove_webhook()
-			bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
-			logger.info(f"Webhook configured at: {WEBHOOK_URL}/webhook")
-			logger.info("Bot started successfully. Waiting for messages...")
-			serve(app, host='0.0.0.0', port=8080)
+		response = MESSAGE_DATA["dolar"].format(
+			dolar_bcv=str(result["dolar-bcv"]).replace('.', ','),
+			dolar_par=str(result["dolar-par"]).replace('.', ','),
+			dolar_pro=str(result["dolar-pro"]).replace('.', ',')
+		)
+
+		await message.reply_text(response, parse_mode=ParseMode.MARKDOWN_V2)
+	except Exception as e:
+		logging.error(f"/dolar: {str(e)}")
+		await message.reply_text(f"*Error:* `{str(e)}`", parse_mode=ParseMode.MARKDOWN_V2)
+
+@validate_command("ask")
+async def ask(update, context, message):
+	await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
+	try:
+		photo_url = None
+		if message.photo:
+			photo_url = (await context.bot.get_file(message.photo[-1].file_id)).file_path
+			text = message.caption
 		else:
-			logger.info("Mode: Polling (local)")
-			bot.delete_webhook()
-			logger.info("Bot started successfully. Waiting for messages...")
-			bot.infinity_polling()
+			text = message.text
+
+		if not text:
+			return await message.reply_text("Empty message...")
+
+		bot_username = (await context.bot.get_me()).username
+
+		if text.startswith(("/ask", f"/ask@{bot_username}")):
+			user_query = text.split(' ', 1)[1] if len(text.split()) > 1 else None
+			if not user_query:
+				return await message.reply_text( "Use: /ask _<your question>_", parse_mode=ParseMode.MARKDOWN)
+
+		elif message.chat.type == "private":
+			user_query = text
+
+		if not user_query or not user_query.strip():
+			return await message.reply_text("I cannot respond to an empty query.")
+
+		user_id, chat_id, lang = register_user_and_chat(
+			message.from_user.id,
+			user_query,
+			message.from_user.username,
+			message.chat.id,
+			message.chat.type,
+			DB,
+			gemini
+		)
+
+		history = get_history(DB, user_id, chat_id)
+
+		prompt_parts = [f"Respond only in {lang} (not bilingual):\n\n{user_query}"]
+		if history:
+			prompt_parts.append(f"\n\n{history}")
+
+		bot_response = gemini.ask(prompt="".join(prompt_parts), photoUrl=photo_url if photo_url else None)
+	
+		data = {
+			"user_id": user_id,
+			"chat_id": chat_id,
+			"msg": user_query,
+			"datetime": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S%z"),
+			"ia_response": sanitize_markdown_v1(bot_response)
+		}
+
+		await divide_and_send(data["ia_response"], message, ParseMode.MARKDOWN)
+		response = DB.table("Messages").insert(data).execute()
+	except Exception as e:
+		logging.error(f"/ask: {str(e)}")
+		await message.reply_text(f"Error: `{str(e)}`", parse_mode=ParseMode.MARKDOWN)
+
+@validate_command("reset")
+async def reset(update, context, message):
+	await context.bot.send_chat_action(chat_id=message.chat.id, action="typing")
+	try:
+		chat_data = DB.table("Chats").select("chat_id").eq("chat_tg_id", message.chat.id).execute()
+		if not chat_data.data:
+			return await message.reply_text("Not data for this chat.", parse_mode=ParseMode.MARKDOWN)
+
+		chat_id_db = chat_data.data[0]["chat_id"]
+
+		user_data = DB.table("Users").select("user_id").eq("tg_id", message.from_user.id).execute()
+		if not user_data.data:
+			return await message.reply_text("User not found.", parse_mode=ParseMode.MARKDOWN)
+
+		user_id = user_data.data[0]["user_id"]
+
+		update_response = DB.table("Messages").update({"is_cleared": True}) \
+			.eq("chat_id", chat_id_db) \
+			.eq("user_id", user_id) \
+			.eq("is_cleared", False) \
+			.execute()
+
+		if not update_response.data:
+			return await message.reply_text("The history chat is already reset.", parse_mode=ParseMode.MARKDOWN)
+
+		await message.reply_text("The history chat has been reset.", parse_mode=ParseMode.MARKDOWN)
 
 	except Exception as e:
-		logger.exception("Fatal error during bot startup")
-		raise
+		logging.error(f"/reset: {str(e)}")
+		await message.reply_text(f"*Critical Error*\n\n{str(e)}", parse_mode=ParseMode.MARKDOWN)
+
+bot_app.add_handler(CommandHandler("start", start))
+bot_app.add_handler(CommandHandler("ping", ping))
+bot_app.add_handler(CommandHandler("help", help))
+bot_app.add_handler(CommandHandler("dolar", dolar))
+bot_app.add_handler(CommandHandler("ask", ask))
+bot_app.add_handler(CommandHandler("reset", reset))
+
+@app.route("/", methods=["GET"])
+async def health_check():
+	return "OK", 200
+
+@app.route("/webhook", methods=["POST"])
+async def webhook():
+	data = await request.get_json(force=True)
+	update = Update.de_json(data, bot_app.bot)
+	await bot_app.process_update(update)
+	return "OK", 200

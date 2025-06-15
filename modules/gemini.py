@@ -1,4 +1,5 @@
 import google.generativeai as genai
+import requests, os
 
 try:
 	with open("./data/gemini_config.json", "r", encoding="utf-8") as f:
@@ -31,6 +32,15 @@ class Gemini:
 	# Recomended: .jpg format for images.
 	def ask(self, prompt, photoUrl = None):
 		try:
-			return self.modelo.generate_content([prompt, photoUrl] if photoUrl else prompt)
+			if photoUrl:
+				imageBytes = requests.get(photoUrl).content
+				with open(photoUrl.split("/")[-1], "wb") as f:
+					f.write(imageBytes)
+
+				uploadedImage = genai.upload_file(path=photoUrl.split("/")[-1], display_name=photoUrl.split("/")[-1])
+				os.remove(photoUrl.split("/")[-1])
+				return self.modelo.generate_content([prompt, uploadedImage]).text
+			else:
+				return self.modelo.generate_content(prompt).text
 		except Exception as e:
 			return f"Error: {str(e)}"

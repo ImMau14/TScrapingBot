@@ -1,5 +1,5 @@
 # Log or reg the user in the database.
-def registerUserAndChat(tgId, userQuery, username, chatTgId, chatType, supabase, gemini):
+def register_user_and_chat(tgId, userQuery, username, chatTgId, chatType, supabase, gemini):
 	# Obtains the user.
 	userResponse = supabase.table('Users').select('Languages(lang_name)', 'user_id').eq('tg_id', tgId).limit(1).execute()
 	
@@ -50,7 +50,7 @@ def registerUserAndChat(tgId, userQuery, username, chatTgId, chatType, supabase,
 		raise Exception(f"Error in registerUserAndChat: {str(e)}")
 
 # Returns the user history.
-def getHistory(supabase, userId, chatId):
+def get_history(supabase, userId, chatId):
 	response = supabase.table('Messages').select('msg', 'ia_response').eq('user_id', userId).eq('chat_id', chatId).eq('is_cleared', False).execute()
 
 	history = None
