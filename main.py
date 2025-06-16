@@ -78,20 +78,27 @@ def dolar(message):
 			logger.error(f"Error: {e}")
 			bot.reply_to(message, f"*Error:* `{str(e)}`", parse_mode="MarkdownV2")
 
-@bot.message_handler(commands=['ask', f'ask@{BOT_NAME}'])
-@bot.message_handler(chat_types=["private"], func=lambda message: message.text is not None and not message.text.startswith('/'))
+@bot.message_handler(chat_types=['private'], content_types=['text', 'photo'], func=lambda m: (m.content_type == 'photo' or (m.text and not m.text.startswith('/'))))
+@bot.message_handler(chat_types=['group', 'supergroup'], content_types=['text', 'photo'], func=lambda m: ((m.text and m.text.startswith(f'/ask')) or (m.caption and m.caption.startswith(f'/ask'))))
 def ask(message):
-	if message.text.startswith('/ask@' + BOT_NAME) or message.chat.type == 'private':
+	photoUrl = None
+	if message.photo:
+		text = message.caption
+		photoUrl = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{bot.get_file(message.photo[-1].file_id).file_path}"
+	else:
+		text = message.text
+
+	if text.startswith('/ask@' + BOT_NAME) or message.chat.type == 'private':
 		try:
 			bot.send_chat_action(message.chat.id, 'typing')
 
 			# Selecting the userQuery.
-			if message.text.startswith(('/ask', f'/ask@{BOT_NAME}')):
-				userQuery = message.text.split(' ', 1)[1] if len(message.text.split()) > 1 else None
+			if text.startswith(('/ask', f'/ask@{BOT_NAME}')):
+				userQuery = text.split(' ', 1)[1] if len(text.split()) > 1 else None
 				if not userQuery:
 					return bot.reply_to(message, "Use: /ask _your question_", parse_mode="Markdown")
 			elif message.chat.type == 'private':
-				userQuery = message.text
+				userQuery = text
 			if not userQuery or not userQuery.strip():
 				return bot.reply_to(message, "I cannot respond to an empty query.")
 
@@ -111,7 +118,7 @@ def ask(message):
 			if history:
 				promptParts.append(f"\n\n{history}")
 
-			botResponse = gemini.ask("".join(promptParts))
+			botResponse = gemini.ask(prompt="".join(promptParts), photoUrl=photoUrl if photoUrl else None)
 
 			data = {
 				'user_id': userId,
