@@ -1,73 +1,155 @@
-<div align="center">
-<h1>TScrapingBot</h1>
+# 🕸 TScrapingBot 1.4.0
 
-Un bot de Telegram enfocado en el web scraping aplicado con la inteligencia artificial. El bot está potenciado por Gemini 2.0.
+![Python](https://img.shields.io/badge/Python-001f2d?style=for-the-badge\&logo=python)
+![Telegram](https://img.shields.io/badge/Telegram-041453?style=for-the-badge\&logo=telegram\&logoColor=046dac)
+![Flask](https://img.shields.io/badge/Flask-010101?style=for-the-badge\&logo=flask)
+![Gemini](https://img.shields.io/badge/Gemini-00436b?style=for-the-badge\&logo=googlegemini\&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-27273e?style=for-the-badge\&logo=postgresql)
+![Requests](https://img.shields.io/badge/Requests-white?style=for-the-badge\&logo=python\&logoColor=black)
+![Beautiful Soup](https://img.shields.io/badge/Beautiful%20Soup-black?style=for-the-badge\&logo=python\&logoColor=white)
 
-Clic aquí para usarlo en Telegram: [TScrapingBot](https://t.me/TScrapingBot)
+Un bot de Telegram para web scraping potenciado con inteligencia artificial. Clic aquí para usarlo en Telegram: [@TScrapingBot](https://t.me/TScrapingBot)
 
 *[Readme in English](./README_ENG.md)*
-</div>
 
-## Funcionalidades
+## 🌟 Características
 
-* Puedes hablar con Gemini con `/ask <mensaje>`.
-* Puedes buscar en un sitio web con `/search <url del sitio> <mensaje>`.
-* Puedes saber el precio del dólar en bolívares con `/dolar` (principalmente, el bot fue hecho para esto, la verdad).
-* Poder discutir diversos temas en hilos separados dentro de distintos chats.
-* Poder discutir sobre temas con Gemini con la capacidad de recordar mensajes.
-* Poder resetear los temas por chat con `/reset`.
+### ✅ Actuales
 
-## Futuras Funcionalidades
+* Respuestas de texto generadas por Gemini 2.0.
+* Análisis de imagen.
+* Fetching y análisis de contenido de URL's.
+* Memoria en chats (solo comandos `/ask` y `/search`).
+* Obtener el precio del USD en VES.
 
-* Poder escribir `/weather <lugar> <mensaje>` y recibir el clima, además de lo que pidas por el mensaje.
-* Poder escribir `/lang` para configurar el idioma de las respuestas.
-* Mejor control con el comando `/reset` para operaciones como resetear el historial en todos los chats existentes.
-* Poder navegar por internet.
-* Implementar la capacidad de Gemini para procesar imágenes.
-* Poder procesar documentos y archivos de texto.
-* Poder procesar videos.
+### 🔮 Futuras
 
-## Datos y Privacidad
+* Generación de imágenes.
+* Conversación mediante audios.
+* Chats colectivos en grupos.
+* Procesar documentos de texto y archivos de video.
+* Obtener el clima.
+* Navegar entre repositorios de GitHub.
 
-### Los Datos y Experiencia
+## 📜 Comandos
 
-* Para que el historial y el lenguaje de las respuestas de Gemini funcionen correctamente, es necesario que el usuario esté registrado en la base de datos para obtener su idioma de preferencia antes de generar la respuesta.
+|          Comando         |                      Acción                     |
+| :----------------------: | :---------------------------------------------: |
+|         `/start`         |                Comando de inicio                |
+|          `/ping`         |   Comando para saber si el bot está despierto   |
+|          `/help`         |         Muestra los comandos disponibles        |
+|         `/dolar`         | Muestra el precio actual del dólar en bolívares |
+|      `/ask <prompt>`     |                Pregunta a Gemini                |
+| `/search <url> <prompt>` |  Busca en la URL y pregunta a Gemini sobre eso  |
 
-* Para mantener los hilos en diferentes chats, es necesario guardar el ID del chat, ya que TScrapingBot lo utiliza para reconocer dónde está respondiendo.
+## 🚀 Despliegue
 
-* Para poder recordar conversaciones pasadas, se guardan los mensajes de entrada y salida del bot.
+### ⚙️ Requisitos
 
-* El usuario se registra al ejecutar `/ask` o `/search`.
+* Python 3.11.\* (o superior).
+* API key de [Gemini 2.0](https://ai.google.dev/).
+* Crear un bot con [@BotFather](https://t.me/BotFather) y obtener su token (en Telegram).
+* Token de [Scrape.do](https://scrape.do/).
+* Base de datos, Token y URL de [Supabase](https://supabase.com).
 
-### Integridad
+### 🗃️ Base de Datos
 
-Los datos no serán compartidos con terceros ni utilizados para ningún otro fin que no sea el desarrollo y las funcionalidades de TScrapingBot.
+Debe de tener esta estructura (código SQL en [schema.sql](data/schema.sql)):
 
-## Cómo Desplegar
+![Diagrama de Supabase](https://files.catbox.moe/a1xva7.png)
 
-### Necesitarás
-* Una API Key de [Gemini](https://ai.google.dev/).
-* Una API Key de [Scrape.do](https://scrape.do/).
-* Crear un bot con [@BotFather](https://t.me/BotFather) (en Telegram).
-* Una API URL y token de [Supabase](https://supabase.com). 
-  - La base de datos debe de tener esta estructura:
-![Base de datos](https://cdn.discordapp.com/attachments/697811476362035251/1373732648110919741/image.png?ex=682b7bba&is=682a2a3a&hm=590764202e6392fc024ff12d65efe82aca71d6584d84b59b9956b1bed327e631&)
+### 🔐 Variables de Entorno
 
-Lo demás varía dependiendo si lo desplegarás o lo usarás local.
+#### 🧱 Básicas
 
-Debes crear un archivo .env en la raíz del proyecto con las siguientes variables:
-```env
-TELEGRAM_TOKEN = <Token de Telegram>
-GEMINI_TOKEN = <API de Gemini>
-SCRAPEDO_TOKEN = <API key de Scrape.do>
-BOT_NAME = <Nombre del bot sin @>
-SUPABASE_URL = <URL de la API de Supabase>
-SUPABASE_KEY = <Token de Supabase>
+|     Variable     |         Valor         |
+| :--------------: | :-------------------: |
+|  `GEMINI_TOKEN`  |   Tu token de Gemini  |
+| `SCRAPEDO_TOKEN` | Tu token de Scrape.do |
+|  `SUPABASE_KEY`  |  Tu token de Supabase |
+|  `SUPABASE_URL`  |   Tu URL de Supabase  |
+| `TELEGRAM_TOKEN` |  Tu token de Telegram |
+
+#### 🛠️ Para Producción
+
+|    Variable   |     Valor    |
+| :-----------: | :----------: |
+|   `HOSTING`   |    `true`    |
+| `WEBHOOK_URL` | URL del host |
+
+### 📦 Instalación
+
+**En estos pasos se asume que ya se ha creado la base de datos.**
+
+1. Clona y entra en el repositorio:
+
+```bash
+git clone https://github.com/ImMau14/TScrapingBot
+cd TScrapingBot
 ```
 
-Para desplegar el bot en [Render](https://render.com/), debes añadir las variables anteriores, más las siguientes:
-```env
-HOSTING = true
-HOST = 8080
-WEBHOOK_URL = <La URL de despliegue, ej. https://mibot.onrender.com>
+2. Inicia un entorno virtual e instala las dependencias:
+
+```bash
+# En Linux/macOS
+python3 -m venv env
+source env/bin/activate
+pip install -r requirements.txt
 ```
+
+```bash
+# En Windows
+python -m venv env
+.\env\Scripts\activate
+pip install -r requirements.txt
+```
+
+3. Copia y configura las variables de entorno.
+
+```bash
+cp .env.template .env
+nano .env # O el editor de tu preferencia.
+```
+
+4. Enciende el bot:
+
+```bash
+# En Linux/macOS
+python3 main.py
+```
+
+```bash
+# En Windows
+python main.py
+```
+
+## 🗂️ Estructura
+
+```
+TScrapingBot/
+├── data/
+│   ├── gemini_config.json    # Modos de configuración de Gemini
+│   └── messages.json         # Mensajes del bot
+├── modules/
+│   ├── database.py           # Funciones de base de datos
+│   ├── dolar_scraper.py      # Función scraper del dólar
+│   ├── gemini.py             # Clase manejadora de Gemini
+│   ├── page_scraper.py       # Función scraper de webs
+│   └── utils.py              # Funciones útiles
+├── main.py                   # Archivo principal (bot)
+├── requirements.txt          # Dependencias
+├── .env.template             # Plantilla de variables de entorno
+├── .gitignore                # Git Ignore
+├── README_ENG.md             # README en inglés
+├── README.MD                 # README en español
+└── LICENSE                   # Licencia MIT
+```
+
+## ☁️ Desplegado En
+
+* Host: [Render](https://render.com).
+* Base de datos: [Supabase](https://supabase.com).
+
+## 📜 Licencia
+
+Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
