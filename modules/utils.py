@@ -53,3 +53,10 @@ def handleError(bot, gemini, error, message):
 
 	except Exception as e:
 		raise Exception(f"*Critical error*: `{str(e)}`")
+
+def chatAction(action, bot, message):
+	bot.send_chat_action(
+		message.chat.id,
+		action=action,
+		message_thread_id=message.message_thread_id if message.chat.is_forum else None
+	)

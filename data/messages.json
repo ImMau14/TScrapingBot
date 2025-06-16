@@ -1,6 +1,6 @@
 {
 	"start": "Hello! 👋 I'm TScrapingBot, your Telegram assistant for web scraping and artificial intelligence. Use /help to see my commands.",
-	"ping": "I'm here! TScrapingBot v1.3.0 online!",
+	"ping": "I'm here! TScrapingBot v1.4.0 online!",
 	"commands": [
 		"💬 *Commands*\n",
 		"/ping - Ping command",
