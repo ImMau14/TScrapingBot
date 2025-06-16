@@ -1,51 +1,7 @@
-from functools import wraps, lru_cache
 import re
 
-# This function determines if the command is valid
-def is_command(command, bot_username, message):
-	if message.photo:
-		text = message.caption
-	else:
-		text = message.text
-
-	if not text:
-		return False
-
-	parts = text.strip().split(' ', 1)
-	if not parts:
-		return False
-
-	base_command = parts[0]
-	group_command = f"/{command}@{bot_username}"
-	private_command = f"/{command}"
-
-	return (
-		((base_command == group_command) and (message.chat.type != "private")) or 
-		((base_command == private_command) and (message.chat.type == "private"))
-	)
-
-@lru_cache(maxsize=1)
-async def get_bot_username(context):
-	bot_info = await context.bot.get_me()
-	return bot_info.username
-
-# Validate_command decorator
-def validate_command(command_name):
-	def decorator(handler_func):
-		@wraps(handler_func)
-		async def wrapper(update, context, *args, **kwargs):
-			message = update.effective_message
-			if not message:
-				return
-			bot_username = await get_bot_username(context)
-			if not is_command(command_name, bot_username, message):
-				return
-			return await handler_func(update, context, message, *args, **kwargs)
-		return wrapper
-	return decorator
-
 # Function to sanitize the MarkdownV1.
-def sanitize_markdown_v1(text):
+def sanitizeMarkdownV1(text):
 	masks = []
 	def make_mask(match):
 		masks.append(match.group(0))
@@ -80,13 +36,13 @@ def splitText(text, max_length=4096):
 	return chunks
 
 # Function to send the diferents chunks.
-async def divide_and_send(text, message, parse):
-	if len(text) >= 5000:
+def divideAndSend(text, bot, message):
+	if len(text) >= 4096:
 		chunks = splitText(text)
 		for i, chunk in enumerate(chunks):
-			await message.reply_text(chunk, parse_mode=ParseMode.MARKDOWN)
+			bot.reply_to(message, chunk, parse_mode="Markdown")
 	else:
-		await message.reply_text(text, parse_mode=parse)
+		bot.reply_to(message, text, parse_mode="Markdown")
 
 def handleError(bot, gemini, error, message):
 	try:

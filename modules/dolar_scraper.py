@@ -1,6 +1,6 @@
 import requests
 
-async def get_dolar_values():
+def getDolarValues():
 	url = "https://api.alcambio.app/graphql"
 
 	query = [
@@ -51,3 +51,7 @@ async def get_dolar_values():
 			'error' : response.status_code,
 			'details' : response.text
 		}
+
+if __name__ == "__main__":
+	for clave, valor in getDolarValues().items():
+		print(f"{clave}: {valor}")
