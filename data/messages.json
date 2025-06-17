@@ -1,12 +1,12 @@
 {
 	"start": "Hello! 👋 I'm TScrapingBot, your Telegram assistant for web scraping and artificial intelligence. Use /help to see my commands.",
-	"ping": "I'm here! TScrapingBot v1.4.0 online!",
+	"ping": "I'm here! TScrapingBot v1.5.0 online!",
 	"commands": [
 		"💬 *Commands*\n",
 		"/ping - Ping command",
 		"/help - Show this command list",
 		"/dolar - Show the current dollar prices in Bs",
-		"/ask `<query>` - Ask to Gemini 2.0",
+		"/ask `<query>` - Ask to Gemini 2.5",
 		"/search `<url>` `<query>` - Search in the URL",
 		"/reset - Reset your chat history"
 	],

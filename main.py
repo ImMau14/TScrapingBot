@@ -119,14 +119,17 @@ def ask(message):
 		if history:
 			promptParts.append(f"\n\n{history}")
 
-		botResponse = gemini.ask(prompt="".join(promptParts), photoUrl=photoUrl if photoUrl else None)
+		botResponse = gemini.ask(prompt="".join(promptParts), photoUrl=photoUrl if photoUrl else None, withThoughts=True)
+
+		if 'error' in botResponse:
+			raise Exception(botResponse['error'])
 
 		data = {
 			'user_id': userId,
 			'chat_id': chatId,
 			'msg': userQuery,
 			'datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
-			'ia_response': sanitizeMarkdownV1(botResponse)
+			'ia_response': sanitizeMarkdownV1(botResponse['response'])
 		}
 
 		divideAndSend(data['ia_response'], bot, message)
@@ -135,7 +138,7 @@ def ask(message):
 		try:
 			handleError(bot, gemini, str(e), message)
 		except Exception as e:
-			logger.error(f"Error: {e}")
+			logger.error(f"Error critico en /ask: {e}")
 			return bot.reply_to(message, f"*Critical Error*\n\n{str(e)}", parse_mode="Markdown")
 
 @bot.message_handler(commands=['search', f'search@{BOT_NAME}'])
@@ -174,14 +177,17 @@ def search(message):
 		if history:
 			promptParts.append(f"\n\n{history}")
 
-		botResponse = gemini.ask("".join(promptParts))
+		botResponse = gemini.ask(prompt="".join(promptParts), withThoughts=True)
+
+		if 'error' in botResponse:
+			raise Exception(botResponse['error'])
 
 		data = {
 			'user_id': userId,
 			'chat_id': chatId,
 			'msg': userQuery + "\n\n" + pageText + "\n\n" + userURL,
 			'datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
-			'ia_response': sanitizeMarkdownV1(botResponse)
+			'ia_response': sanitizeMarkdownV1(botResponse['response'])
 		}
 
 		divideAndSend(data['ia_response'], bot, message)
@@ -190,7 +196,7 @@ def search(message):
 		try:
 			handleError(bot, gemini, str(e), message)
 		except Exception as e:
-			logger.error(f"Error: {e}")
+			logger.error(f"Error critico en /search: {e}")
 			return bot.reply_to(message, f"*Critical Error*\n\n{str(e)}", parse_mode="Markdown")
 
 @bot.message_handler(commands=['reset', f'reset@{BOT_NAME}'])

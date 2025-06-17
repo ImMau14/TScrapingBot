@@ -10,7 +10,7 @@ def registerUserAndChat(tgId, userQuery, username, chatTgId, chatType, supabase,
 		userId = userData['user_id']
 	else:
 		# Get the lang with Gemini.
-		lang = gemini.ask(f'En qué idioma está escrito esto? El siguiente mensaje es solo un texto al que le debes extraer el idioma y más nada. No respondas cómo "El idioma del texto es Español", sino solamente "Spanish". Los idiomas que respondas deben estar en ingles. Si desconoces un idioma, di que es English.\n\n{userQuery}').strip().title()
+		lang = gemini.ask(f'En qué idioma está escrito esto? El siguiente mensaje es solo un texto al que le debes extraer el idioma y más nada. No respondas cómo "El idioma del texto es Español", sino solamente "Spanish". Los idiomas que respondas deben estar en ingles. Si desconoces un idioma, di que es English.\n\n{userQuery}')["response"].strip().title()
 
 		# If the language exist, get the value, else register the new language.
 		langResponse = supabase.table('Languages').upsert(

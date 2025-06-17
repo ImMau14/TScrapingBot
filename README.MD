@@ -1,4 +1,4 @@
-# 🕸 TScrapingBot 1.4.0
+# 🕸 TScrapingBot 1.5.0
 
 ![Python](https://img.shields.io/badge/Python-001f2d?style=for-the-badge\&logo=python)
 ![Telegram](https://img.shields.io/badge/Telegram-041453?style=for-the-badge\&logo=telegram\&logoColor=046dac)
@@ -16,7 +16,8 @@ Un bot de Telegram para web scraping potenciado con inteligencia artificial. Cli
 
 ### ✅ Actuales
 
-* Respuestas de texto generadas por Gemini 2.0.
+* Respuestas de texto generadas por Gemini 2.5.
+* Modo de razonamiento.
 * Análisis de imagen.
 * Fetching y análisis de contenido de URL's.
 * Memoria en chats (solo comandos `/ask` y `/search`).
