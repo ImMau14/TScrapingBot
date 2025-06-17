@@ -1,4 +1,4 @@
-# 🕸 TScrapingBot 1.4.0
+# 🕸 TScrapingBot 1.5.0
 
 ![Python](https://img.shields.io/badge/Python-001f2d?style=for-the-badge\&logo=python)
 ![Telegram](https://img.shields.io/badge/Telegram-041453?style=for-the-badge\&logo=telegram\&logoColor=046dac)
@@ -16,8 +16,9 @@ A Telegram bot for web scraping enhanced with artificial intelligence. Click her
 
 ### ✅ Current
 
-* Text responses powered by Gemini 2.0.
+* Text responses powered by Gemini 2.5.
 * Image analysis.
+* Reasoning mode.
 * URL content fetching and parsing.
 * Memory in chats (only for `/ask` and `/search` commands).
 * Retrieve the USD to VES exchange rate.
@@ -48,7 +49,7 @@ A Telegram bot for web scraping enhanced with artificial intelligence. Click her
 ### ⚙️ Requirements
 
 * Python 3.11.* (or later).
-* API key from [Gemini 2.0](https://ai.google.dev/).
+* API key from [Gemini](https://ai.google.dev/).
 * A bot token from [@BotFather](https://t.me/BotFather).
 * Token from [Scrape.do](https://scrape.do/).
 * Database, token and URL from [Supabase](https://supabase.com).

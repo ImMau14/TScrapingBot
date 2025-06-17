@@ -1,46 +1,70 @@
-import google.generativeai as genai
-import requests, os
-
-try:
-	with open("./data/gemini_config.json", "r", encoding="utf-8") as f:
-		from json import load
-		CONFIG = load(f)
-except Exception as e:
-	print("Failed to load gemini_config.json\nYou will need to specify the mode when initializing the class to avoid errors\nDetails: ", str(e))
+from google import genai
+from google.genai import types
+import requests, json
 
 class Gemini:
-	def __init__(self, token, mode=None):
-		genai.configure(api_key=token)
+	def __init__(self, token: str, mode: str = None):
+		self.client = genai.Client(api_key=token)
+
+		try:
+			with open("./data/gemini_config.json", "r", encoding="utf-8") as f:
+				CONFIG = json.load(f)
+		except:
+			CONFIG = {}
 
 		if mode == 'chat':
-			self.mode = CONFIG['MarkdownV1']
+			self.mode = CONFIG.get('MarkdownV1', "")
 		elif mode:
 			self.mode = mode
 		else:
-			self.mode = CONFIG['Default']
+			self.mode = CONFIG.get('Default', "")
 
-		self.modelo = genai.GenerativeModel(
-			'gemini-2.0-flash',
-			system_instruction=self.mode,
-			generation_config=genai.GenerationConfig(
-				max_output_tokens=4000,
+		self.modelName = 'gemini-2.5-flash'
+
+	def ask(self, prompt: str, photoUrl: str = None, withThoughts: bool = False) -> dict:
+		try:
+			contents = prompt
+			if photoUrl:
+				resp = requests.get(photoUrl, timeout=5)
+				resp.raise_for_status()
+				img_bytes = resp.content
+				part = types.Part.from_bytes(
+					data=img_bytes,
+					mime_type="image/jpeg"
+				)
+				contents = [prompt, part]
+
+			thinkingCfg = None
+			if withThoughts:
+				thinkingCfg = types.ThinkingConfig(
+					thinking_budget=8192,
+					include_thoughts=True
+				)
+
+			cfg = types.GenerateContentConfig(
+				system_instruction=self.mode,
+				max_output_tokens=32768,
 				temperature=0.3,
 				top_p=0.9,
+				thinking_config=thinkingCfg
 			)
-		)
 
-	# Recomended: .jpg format for images.
-	def ask(self, prompt, photoUrl = None):
-		try:
-			if photoUrl:
-				imageBytes = requests.get(photoUrl).content
-				with open(photoUrl.split("/")[-1], "wb") as f:
-					f.write(imageBytes)
+			response = self.client.models.generate_content(
+				model=self.modelName,
+				contents=contents,
+				config=cfg
+			)
 
-				uploadedImage = genai.upload_file(path=photoUrl.split("/")[-1], display_name=photoUrl.split("/")[-1])
-				os.remove(photoUrl.split("/")[-1])
-				return self.modelo.generate_content([prompt, uploadedImage]).text
+			if withThoughts:
+				parts = response.candidates[0].content.parts
+				thoughts = [p.text for p in parts if p.thought]
+				answer  = next(p.text for p in parts if not p.thought)
+				return {
+					"thoughts": thoughts,
+					"response": answer
+				}
 			else:
-				return self.modelo.generate_content(prompt).text
+				return {"response": response.text}
+
 		except Exception as e:
-			return f"Error: {str(e)}"
+			return {"error": str(e)}
