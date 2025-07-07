@@ -14,6 +14,8 @@ class Gemini:
 
 		if mode == 'chat':
 			self.mode = CONFIG.get('MarkdownV1', "")
+		elif mode == 'MarkdownV1_2':
+			self.mode = '\n'.join(CONFIG.get('MarkdownV1_2', ""))
 		elif mode:
 			self.mode = mode
 		else:

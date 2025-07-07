@@ -49,17 +49,32 @@ def registerUserAndChat(tgId, userQuery, username, chatTgId, chatType, supabase,
 	except Exception as e:
 		raise Exception(f"Error in registerUserAndChat: {str(e)}")
 
-# Returns the user history.
 def getHistory(supabase, userId, chatId):
-	response = supabase.table('Messages').select('msg', 'ia_response').eq('user_id', userId).eq('chat_id', chatId).eq('is_cleared', False).execute()
+	response = (
+		supabase
+		.table('Messages')
+		.select('msg_id', 'msg', 'ia_response', 'datetime')
+		.eq('user_id', userId)
+		.eq('chat_id', chatId)
+		.eq('is_cleared', False)
+		.order('datetime', desc=False)
+		.execute()
+	)
 
-	history = None
-	if len(response.data) > 0:
-		entries = []
-		for message in response.data:
-			entry = f"User: {message['msg'].strip()}\n\nBot: {message['ia_response'].strip()}"
-			entries.append(entry)
+	if not response.data:
+		return None
 
-		history = "History (you are the bot and I'm the user):\n\n" + "\n\n".join(entries)
-	
+	entries = []
+	for idx, message in enumerate(response.data, start=1):
+		entry = (
+			f"<turn id='{idx}' date='{message['datetime']}'>\n"
+			f"  <user_message>{message['msg'].strip()}</user_message>\n"
+			f"  <bot_response>{message['ia_response'].strip()}</bot_response>\n"
+			f"</turn>"
+		)
+		entries.append(entry)
+
+	entries.reverse()
+
+	history = "History (you are the bot and I'm the user):\n\n" + "\n\n".join(entries)
 	return history

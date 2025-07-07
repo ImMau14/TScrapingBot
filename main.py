@@ -22,7 +22,7 @@ WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 BOT_NAME = bot.get_me().username
 
-gemini = Gemini(GEMINI_TOKEN, 'chat')
+gemini = Gemini(GEMINI_TOKEN, 'MarkdownV1_2')
 DB = create_client(os.getenv('SUPABASE_URL'), os.getenv('SUPABASE_KEY'))
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -86,22 +86,21 @@ def ask(message):
 	else:
 		text = message.text
 
-	if not (text.startswith('/ask@' + BOT_NAME) or message.chat.type == 'private'):
+	if not (text.startswith(f'/ask@{BOT_NAME}') or message.chat.type == 'private'):
 		return
 
 	try:
 		chatAction('typing', bot, message)
 
-		# Selecting the userQuery.
 		if text.startswith(('/ask', f'/ask@{BOT_NAME}')):
 			userQuery = text.split(' ', 1)[1] if len(text.split()) > 1 else None
 			if not userQuery:
-				return bot.reply_to(message, "Use: /ask _your question_", parse_mode="Markdown")
-		elif message.chat.type == 'private':
+				return bot.reply_to(message, "Use: /ask <your_question>", parse_mode="Markdown")
+		else:
 			userQuery = text
 
 		if not userQuery or not userQuery.strip():
-			return bot.reply_to(message, "I cannot respond to an empty query.")
+			return bot.reply_to(message, "I can't reply to a empty message.")
 
 		userId, chatId, lang = registerUserAndChat(
 			message.from_user.id,
@@ -112,14 +111,20 @@ def ask(message):
 			DB,
 			gemini
 		)
-
 		history = getHistory(DB, userId, chatId)
 
-		promptParts = [f"Respond only in {lang} (not bilingual):\n\n{userQuery}"]
+		currentDate = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z')
+		promptParts = [
+			f"Current Datetime: {currentDate}\nRespond only in {lang} (not bilingual):\n\n{userQuery}"
+		]
 		if history:
 			promptParts.append(f"\n\n{history}")
 
-		botResponse = gemini.ask(prompt="".join(promptParts), photoUrl=photoUrl if photoUrl else None, withThoughts=True)
+		botResponse = gemini.ask(
+			prompt="".join(promptParts),
+			photoUrl=photoUrl,
+			withThoughts=True
+		)
 
 		if 'error' in botResponse:
 			raise Exception(botResponse['error'])
@@ -128,18 +133,18 @@ def ask(message):
 			'user_id': userId,
 			'chat_id': chatId,
 			'msg': userQuery,
-			'datetime': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z'),
+			'datetime': currentDate,
 			'ia_response': sanitizeMarkdownV1(botResponse['response'])
 		}
-
 		divideAndSend(data['ia_response'], bot, message)
-		response = DB.table('Messages').insert(data).execute()
+		DB.table('Messages').insert(data).execute()
+
 	except Exception as e:
 		try:
 			handleError(bot, gemini, str(e), message)
-		except Exception as e:
-			logger.error(f"Error critico en /ask: {e}")
-			return bot.reply_to(message, f"*Critical Error*\n\n{str(e)}", parse_mode="Markdown")
+		except Exception as nested:
+			logger.error(f"Critical error in /ask: {nested}")
+			return bot.reply_to(message, f"*Critical Error*\n\n{nested}", parse_mode="Markdown")
 
 @bot.message_handler(commands=['search', f'search@{BOT_NAME}'])
 def search(message):
@@ -173,7 +178,10 @@ def search(message):
 		history = getHistory(DB, userId, chatId)
 		pageText = obtainPageText(userURL, SCRAPEDO_TOKEN)
 
-		promptParts = [f"Respond only in {lang} (not bilingual):\n\n{userQuery}\n\n{pageText}\n\nPage URL: {userURL}"]
+		currentDate = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S%z')
+		promptParts = [
+			f"Current Datetime: {currentDate}\nRespond only in {lang} (not bilingual):\n\n{userQuery}\n\nWeb Resource:\n{pageText}\n\nPage URL:\n{userURL}"
+		]
 		if history:
 			promptParts.append(f"\n\n{history}")
 
@@ -196,7 +204,7 @@ def search(message):
 		try:
 			handleError(bot, gemini, str(e), message)
 		except Exception as e:
-			logger.error(f"Error critico en /search: {e}")
+			logger.error(f"Critical error in /search: {e}")
 			return bot.reply_to(message, f"*Critical Error*\n\n{str(e)}", parse_mode="Markdown")
 
 @bot.message_handler(commands=['reset', f'reset@{BOT_NAME}'])
@@ -243,7 +251,7 @@ def webhook():
 		json_data = request.get_data().decode('utf-8')
 		update = telebot.types.Update.de_json(json_data)
 		bot.process_new_updates([update])
-		return ''
+		return '', 200
 	return 'Tipo de contenido inválido', 403
 
 if __name__ == '__main__':
